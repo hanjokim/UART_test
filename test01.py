@@ -39,8 +39,12 @@ try:
                 print("Received 'x' from serial port")
                 break
             else:
-                print(b_rcv[0], chr(b_rcv[0]))
-                print(s_rcv)
+                # print(b_rcv[0], chr(b_rcv[0]))
+                print(b_rcv, s_rcv)
+        elif b_rcv == b'':
+            continue
+        else:
+            print("Message not properly sent with STX and ETX : ", b_rcv)
 
         # Rpi 입력값이 있으면 송신
         # s_snd = input_with_timeout('', 1) # Wait 2 sec to input
