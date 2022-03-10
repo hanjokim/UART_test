@@ -5,9 +5,9 @@ import serial
 import time
 import threading
 
-DEV_PLATFORM = 'PI3'
+DEV_PLATFORM = 'PI4'
 
-if DEV_PLATFORM == 'DESKTOP':
+if DEV_PLATFORM == 'WIN':
     port = 'COM5'
 elif DEV_PLATFORM == 'PI3':
     port = '/dev/ttyAMA0'

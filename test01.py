@@ -18,7 +18,7 @@ def input_with_timeout(prompt, timeout):
 try:
     # Serial port setup
     ser = serial.Serial(
-        port='/dev/ttyAMA0', # Raspberry pi 3B+ GPIO, Windows에서는 COM3 형태로 입력
+        port='/dev/ttyAMA1', # Raspberry pi 3B+ GPIO, Windows에서는 COM3 형태로 입력
         baudrate = 115200,
         parity=serial.PARITY_NONE,
         stopbits=serial.STOPBITS_ONE,
