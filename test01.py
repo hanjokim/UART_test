@@ -34,13 +34,13 @@ try:
         b_rcv = ser.readline().rstrip(b'\n\r')
         if b_rcv.startswith(b'\x02') and b_rcv.endswith(b'\x03') and b_rcv != b'':
             b_rcv = b_rcv.lstrip(b'\x02').rstrip(b'\x03')
-            s_rcv = b_rcv.decode('utf-8')
+            s_rcv = b_rcv #.decode('utf-8')
             if s_rcv.lower() == 'x':
                 print("Received 'x' from serial port")
                 break
             else:
                 # print(b_rcv[0], chr(b_rcv[0]))
-                print(b_rcv, s_rcv)
+                print("STX, RTX received: ", b_rcv, s_rcv)
         elif b_rcv == b'':
             continue
         else:

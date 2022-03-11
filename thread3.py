@@ -7,15 +7,19 @@ import threading
 
 line = [] #라인 단위로 데이터 가져올 리스트 변수
 
+# port = 'COM3'# 시리얼 포트
 port = '/dev/ttyAMA1' # 시리얼 포트
 baud = 115200 # 시리얼 보드레이트(통신속도)
+STX = 0x02
+ETX = 0x03
 
 exitThread = False   # 쓰레드 종료용 변수
 
 
 #쓰레드 종료용 시그널 함수
 def handler(signum, frame):
-     exitThread = True
+    print("Exit handler enabled")
+    exitThread = True
 
 
 #데이터 처리할 함수
@@ -25,7 +29,7 @@ def parsing_data(data):
     tmp = ''.join(data)
 
     #출력!
-    print("Data: ", tmp)
+    print("Data: ", data, tmp, tmp.encode())
 
 
 #본 쓰레드
@@ -39,8 +43,8 @@ def readThread(ser):
         for c in ser.read():
             #line 변수에 차곡차곡 추가하여 넣는다.
             line.append(chr(c))
-
-            if c == b'\x03': #라인의 끝을 만나면..
+            # print(c, chr(c), ord(b'\x03'), c==ord('\x03'))
+            if c == ETX: #라인의 끝을 만나면..
                 #데이터 처리 함수로 호출
                 parsing_data(line)
 
@@ -52,7 +56,7 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, handler)
 
     #시리얼 열기
-    ser = serial.Serial(port, baud, timeout=1)
+    ser = serial.Serial(port=port, baudrate=baud, timeout=1)
 
     #시리얼 읽을 쓰레드 생성
     thread = threading.Thread(target=readThread, args=(ser,))
