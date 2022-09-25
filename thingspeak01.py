@@ -5,6 +5,7 @@ import serial
 import time
 import signal
 import threading
+import struct
 
 
 line = [] #라인 단위로 데이터 가져올 리스트 변수
@@ -22,16 +23,30 @@ exitThread = False   # 쓰레드 종료용 변수
 def handler(signum, frame):
      exitThread = True
 
-
 #데이터 처리할 함수
 def parsing_data(data):
-    # 리스트 구조로 들어 왔기 때문에
-    # 작업하기 편하게 스트링으로 합침
+    tmp = struct.unpack('!bb13h2ch', data)
+    if check_data(tmp) == 1:
+        return tmp
+    else:
+        return -1
 
-    # tmp = ''.join(data)
+#데이터 체크 함수
+def check_data(data):
+    #데이터 길이, start#1, start#2, Check data 검증
+    #하위바이트 취하기 : 데이터 & 0x0f
+    checksum = 0
+    for i in data:
+        checksum += i if type(i) == int else i[0]
 
-    #출력!
-    print(len(data), data)
+    print(checksum, data[-1])
+
+    if len(data) != 18 or data[0] != 0x42 or data[1] != 0x4d:
+        return -1
+    else :
+        return 1
+
+
 
 #본 쓰레드
 def readThread(ser):
@@ -42,7 +57,11 @@ def readThread(ser):
     while not exitThread:
         #데이터가 있있다면
         temp = ser.readline(data_size)
-        parsing_data(temp)
+        if len(temp) == 32:
+            data = parsing_data(temp)
+            print(data)
+        else:
+            ser.flushInput()
         time.sleep(1)
 
 if __name__ == "__main__":
