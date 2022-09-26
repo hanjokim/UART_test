@@ -1,11 +1,11 @@
 #-*- coding: utf-8 -*-
-# https://blog.naver.com/PostView.naver?isHttpsRedirect=true&blogId=chandong83&logNo=220941128858
 
 import serial
 import time
 import signal
 import threading
 import struct
+import requests
 
 
 line = [] #라인 단위로 데이터 가져올 리스트 변수
@@ -62,6 +62,9 @@ def check_data(data):
     else :
         return 1
 
+def sendData():
+    response = requests.get(api_URL, params=params)
+    return response
 
 
 #본 쓰레드
@@ -92,3 +95,5 @@ if __name__ == "__main__":
 
     #시작!
     thread.start()
+
+    sendData()
