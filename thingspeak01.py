@@ -15,6 +15,21 @@ baud = 9600 # 시리얼 보드레이트(통신속도) - Plantower PMS5003/7003
 data_size = 32  # 42(start#1), 4D(start#2), 00 1C(frame length=2*13+2=28/001C), Data#1 ~ Data10,
                 # Data11(temp=Data14(Signed)/10), Data12(humidity=Data15/10)
                 # Data13H(firmware ver), Data13L(error code), Check Code(start#1+start#2+~+Data13 Low 8 bits)
+data_number = 18 # Number of Data
+start1 = 0x42
+start2 = 0x4d
+params = {
+    "api_key"   : "N4NJ5OM3GPEQF6BB",
+    "timezone"  : "Asia/Seoul",
+    "field1"    : 0,                # PM1.0
+    "field2"    : 0,                # PM2.5
+    "field3"    : 0,                # PM10
+    "field4"    : 0,                # Temperature
+    "field5"    : 0,                # Humidity
+    "field6"    : 0,                # Longitude
+    "field7"    : 0,                # Latitude
+    "field8"    : 0,                # Altitude
+}
 
 exitThread = False   # 쓰레드 종료용 변수
 
@@ -41,7 +56,7 @@ def check_data(data):
 
     print(checksum, data[-1])
 
-    if len(data) != 18 or data[0] != 0x42 or data[1] != 0x4d:
+    if len(data) != data_number or data[0] != start1 or data[1] != start2:
         return -1
     else :
         return 1
@@ -57,7 +72,7 @@ def readThread(ser):
     while not exitThread:
         #데이터가 있있다면
         temp = ser.readline(data_size)
-        if len(temp) == 32:
+        if len(temp) == data_size:
             data = parsing_data(temp)
             print(data)
         else:
