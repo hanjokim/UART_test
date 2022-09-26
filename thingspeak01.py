@@ -18,6 +18,7 @@ data_size = 32  # 42(start#1), 4D(start#2), 00 1C(frame length=2*13+2=28/001C), 
 data_number = 18 # Number of Data
 start1 = 0x42
 start2 = 0x4d
+api_URL = "https://api.thingspeak.com/update"
 params = {
     "api_key"   : "N4NJ5OM3GPEQF6BB",
     "timezone"  : "Asia/Seoul",
