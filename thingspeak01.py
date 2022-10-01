@@ -6,6 +6,7 @@ import signal
 import threading
 import struct
 import requests
+from datetime import datetime
 
 
 line = [] #라인 단위로 데이터 가져올 리스트 변수
@@ -30,6 +31,14 @@ params = {
     "field7"    : 0,                # Latitude
     "field8"    : 0,                # Altitude
 }
+meas_data = {
+    "pm1"   : None,
+    "pm25"  : None,
+    "pm10"  : None,
+    "temp"  : None,
+    "humi"  : None,
+    "timestamp"  : 0.,
+}
 
 exitThread = False   # 쓰레드 종료용 변수
 
@@ -38,25 +47,24 @@ exitThread = False   # 쓰레드 종료용 변수
 def handler(signum, frame):
      exitThread = True
 
-#데이터 처리할 함수
-def parsing_data(data):
-    tmp = struct.unpack('!16h', data)
+# 데이터 처리할 함수
+def parsing_data(packed_data):
+    tmp = struct.unpack('!16h', packed_data)
     if check_data(tmp) == 1:
         return tmp
     else:
         return -1
 
-#데이터 체크 함수
+# 데이터 체크 함수
 def check_data(data):
-    #데이터 길이, start#1, start#2, Check data 검증
-    #하위바이트 취하기 : 데이터 & 0x0f
+    # 데이터 길이, start#1, start#2, Check data 검증
+    # 상하위바이트 취하기 : 데이터 unsigned화 & 0xff
     checksum = 0
-    for i in data:
-        checksum += int(i)
+    for i, v in enumerate(data):
+        if i != len(data) - 1:
+            checksum += (((v+2**16) & 0xff00) >> 8) + (v+2**16 & 0x00ff)
 
-    print(start_chars, data[0], data[-1])
-
-    if len(data) != data_number or data[0] != start_chars:
+    if len(data) != data_number or data[0] != start_chars or checksum != data[-1] or data[14]+2**16 & 0x00ff:
         return -1
     else :
         return 1
@@ -77,7 +85,14 @@ def readThread(ser):
         temp = ser.readline(data_size)
         if len(temp) == data_size:
             data = parsing_data(temp)
-            print(data)
+            meas_data["pm1"] = data[2]
+            meas_data["pm25"] = data[3]
+            meas_data["pm10"] = data[4]
+            meas_data["temp"] = data[12] / 10.
+            meas_data["humi"] = data[13] / 10.
+            meas_data["timestamp"] = time.time()
+
+            print(meas_data)
         else:
             ser.flushInput()
         time.sleep(1)
