@@ -15,9 +15,8 @@ baud = 9600 # 시리얼 보드레이트(통신속도) - Plantower PMS5003/7003
 data_size = 32  # 42(start#1), 4D(start#2), 00 1C(frame length=2*13+2=28/001C), Data#1 ~ Data10,
                 # Data11(temp=Data14(Signed)/10), Data12(humidity=Data15/10)
                 # Data13H(firmware ver), Data13L(error code), Check Code(start#1+start#2+~+Data13 Low 8 bits)
-data_number = 18 # Number of Data
-start1 = 0x42
-start2 = 0x4d
+data_number = 16 # Number of Data
+start_chars = 0x424d
 api_URL = "https://api.thingspeak.com/update"
 params = {
     "api_key"   : "N4NJ5OM3GPEQF6BB",
@@ -41,7 +40,7 @@ def handler(signum, frame):
 
 #데이터 처리할 함수
 def parsing_data(data):
-    tmp = struct.unpack('!bb13h2ch', data)
+    tmp = struct.unpack('!16h', data)
     if check_data(tmp) == 1:
         return tmp
     else:
@@ -53,11 +52,11 @@ def check_data(data):
     #하위바이트 취하기 : 데이터 & 0x0f
     checksum = 0
     for i in data:
-        checksum += i if type(i) == int else i[0]
+        checksum += int(i)
 
-    print(checksum, data[-1])
+    print(start_chars, data[0], data[-1])
 
-    if len(data) != data_number or data[0] != start1 or data[1] != start2:
+    if len(data) != data_number or data[0] != start_chars:
         return -1
     else :
         return 1
@@ -96,4 +95,4 @@ if __name__ == "__main__":
     #시작!
     thread.start()
 
-    sendData()
+    # sendData()
