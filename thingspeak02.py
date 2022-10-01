@@ -11,15 +11,8 @@ import requests
 
 line = [] #라인 단위로 데이터 가져올 리스트 변수
 
-pm_port  = '/dev/ttyAMA1' # 시리얼 포트
 gps_port = '/dev/ttyAMA0'
-pm_baud  = 9600 # 시리얼 보드레이트(통신속도) - Plantower PMS5003/7003
 gps_baud = 9600
-pm_data_size = 32  # 42(start#1), 4D(start#2), 00 1C(frame length=2*13+2=28/001C), Data#1 ~ Data10,
-                # Data11(temp=Data14(Signed)/10), Data12(humidity=Data15/10)
-                # Data13H(firmware ver), Data13L(error code), Check Code(start#1+start#2+~+Data13 Low 8 bits)
-pm_data_number = 16 # Number of Data
-pm_start_chars = 0x424d
 api_URL = "https://api.thingspeak.com/update"
 params = {
     "api_key"   : "N4NJ5OM3GPEQF6BB",
@@ -67,7 +60,7 @@ def check_data(data):
         if i != len(data) - 1:
             checksum += (((v+2**16) & 0xff00) >> 8) + (v+2**16 & 0x00ff)
 
-    if len(data) != pm_data_number or data[0] != pm_start_chars or checksum != data[-1] or data[14]+2**16 & 0x00ff:
+    if len(data) != 0:
         return -1
     else :
         return 1
@@ -78,15 +71,15 @@ def sendData():
 
 
 #본 쓰레드
-def readThread(pm_ser, gps_ser):
+def readThread(gps_ser):
     global line
     global exitThread
 
     # 쓰레드 종료될때까지 계속 돌림
     while not exitThread:
         #데이터가 있있다면
-        temp = pm_ser.readline(pm_data_size)
-        if len(temp) == pm_data_size:
+        temp = gps_ser.readline()
+        if temp[0:6] == "$GPNSS":
             data = parsing_data(temp)
             meas_data["pm1"] = data[2]
             meas_data["pm25"] = data[3]
@@ -97,7 +90,7 @@ def readThread(pm_ser, gps_ser):
 
             print(meas_data)
         else:
-            pm_ser.flushInput()
+            gps_ser.flushInput()
         time.sleep(1)
 
 if __name__ == "__main__":
@@ -105,11 +98,10 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, handler)
 
     #시리얼 열기
-    pm_ser = serial.Serial(pm_port, pm_baud, timeout=0)
     gps_ser = serial.Serial(gps_port, gps_baud, timeout=0)
 
     #시리얼 읽을 쓰레드 생성
-    thread = threading.Thread(target=readThread, args=(pm_ser, gps_ser, ))
+    thread = threading.Thread(target=readThread, args=(gps_ser, ))
 
     #시작!
     thread.start()
