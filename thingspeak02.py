@@ -9,10 +9,8 @@ import requests
 # from datetime import datetime
 
 
-line = [] #라인 단위로 데이터 가져올 리스트 변수
-
-gps_port = '/dev/ttyAMA0'
-gps_baud = 9600
+gps_port = '/dev/ttyACM0'
+gps_baud = 115200
 api_URL = "https://api.thingspeak.com/update"
 params = {
     "api_key"   : "N4NJ5OM3GPEQF6BB",
@@ -24,7 +22,7 @@ params = {
     "field5"    : 0,                # Humidity
     "field6"    : 0,                # Longitude
     "field7"    : 0,                # Latitude
-    "field8"    : 0,                # Altitude
+    "field8"    : 0,                # timestamp
 }
 
 meas_data = {
@@ -33,6 +31,8 @@ meas_data = {
     "pm10"  : None,
     "temp"  : None,
     "humi"  : None,
+    "long"  : None,
+    "lati"  : None,
     "timestamp"  : 0.,
 }
 
@@ -44,26 +44,28 @@ def handler(signum, frame):
      exitThread = True
 
 # 데이터 처리할 함수
-def parsing_data(packed_data):
-    tmp = struct.unpack('!16h', packed_data)
-    if check_data(tmp) == 1:
-        return tmp
+def parsing_gps_data(gps_bytes):
+    str = gps_bytes.decode('utf-8')
+    gps_data = str.rstrip().split(',')
+    if check_gps_data(gps_data) == 1:
+        return gps_data
     else:
         return -1
 
 # 데이터 체크 함수
-def check_data(data):
+def check_gps_data(data):
     # 데이터 길이, start#1, start#2, Check data 검증
     # 상하위바이트 취하기 : 데이터 unsigned화 & 0xff
-    checksum = 0
-    for i, v in enumerate(data):
-        if i != len(data) - 1:
-            checksum += (((v+2**16) & 0xff00) >> 8) + (v+2**16 & 0x00ff)
-
-    if len(data) != 0:
-        return -1
-    else :
-        return 1
+    # checksum = 0
+    # for i, v in enumerate(data):
+    #     if i != len(data) - 1:
+    #         checksum += (((v+2**16) & 0xff00) >> 8) + (v+2**16 & 0x00ff)
+    #
+    # if len(data) != 0:
+    #     return -1
+    # else :
+    #     return 1
+    return 1
 
 def sendData():
     response = requests.get(api_URL, params=params)
@@ -72,25 +74,28 @@ def sendData():
 
 #본 쓰레드
 def readThread(gps_ser):
-    global line
     global exitThread
 
     # 쓰레드 종료될때까지 계속 돌림
     while not exitThread:
         #데이터가 있있다면
         temp = gps_ser.readline()
-        if temp[0:6] == "$GPNSS":
-            data = parsing_data(temp)
-            meas_data["pm1"] = data[2]
-            meas_data["pm25"] = data[3]
-            meas_data["pm10"] = data[4]
-            meas_data["temp"] = data[12] / 10.
-            meas_data["humi"] = data[13] / 10.
-            meas_data["timestamp"] = time.time()
+        gps_data = parsing_gps_data(temp)
+        # print(temp)
+        if gps_data == -1: continue
+        if gps_data[0] == "$GPRMC" and gps_data[2] == 'A':
+            print(gps_data)
+            # data = parsing_gps_data(str)
+            # if data == -1 : break
+            meas_data["long"] = gps_data[3]
+            meas_data["lati"] = gps_data[5]
+            # meas_data["timestamp"] = time.time()
 
             print(meas_data)
         else:
             gps_ser.flushInput()
+            meas_data["long"] = None
+            meas_data["lati"] = None
         time.sleep(1)
 
 if __name__ == "__main__":

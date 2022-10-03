@@ -8,13 +8,10 @@ import struct
 import requests
 # from datetime import datetime
 
-
-line = [] #라인 단위로 데이터 가져올 리스트 변수
-
 pm_port  = '/dev/ttyAMA1' # 시리얼 포트
-gps_port = '/dev/ttyAMA0'
+gps_port = '/dev/ttyACM0'
 pm_baud  = 9600 # 시리얼 보드레이트(통신속도) - Plantower PMS5003/7003
-gps_baud = 9600
+gps_baud = 115200
 pm_data_size = 32  # 42(start#1), 4D(start#2), 00 1C(frame length=2*13+2=28/001C), Data#1 ~ Data10,
                 # Data11(temp=Data14(Signed)/10), Data12(humidity=Data15/10)
                 # Data13H(firmware ver), Data13L(error code), Check Code(start#1+start#2+~+Data13 Low 8 bits)
@@ -40,6 +37,8 @@ meas_data = {
     "pm10"  : None,
     "temp"  : None,
     "humi"  : None,
+    "long"  : None,
+    "lati"  : None,
     "timestamp"  : 0.,
 }
 
@@ -51,15 +50,15 @@ def handler(signum, frame):
      exitThread = True
 
 # 데이터 처리할 함수
-def parsing_data(packed_data):
+def parsing_pm_data(packed_data):
     tmp = struct.unpack('!16h', packed_data)
-    if check_data(tmp) == 1:
+    if check_pm_data(tmp) == 1:
         return tmp
     else:
         return -1
 
 # 데이터 체크 함수
-def check_data(data):
+def check_pm_data(data):
     # 데이터 길이, start#1, start#2, Check data 검증
     # 상하위바이트 취하기 : 데이터 unsigned화 & 0xff
     checksum = 0
@@ -71,6 +70,21 @@ def check_data(data):
         return -1
     else :
         return 1
+
+def parsing_gps_data(gps_bytes):
+    str = gps_bytes.decode('utf-8')
+    gps_data = str.rstrip().split(',')
+    if check_gps_data(gps_data) == 1:
+        return gps_data
+    else:
+        return -1
+
+# 데이터 체크 함수
+def check_gps_data(data):
+    # 데이터 길이, start#1, start#2, Check data 검증
+    # 상하위바이트 취하기 : 데이터 unsigned화 & 0xff
+
+    return 1
 
 def sendData():
     response = requests.get(api_URL, params=params)
@@ -86,18 +100,44 @@ def readThread(pm_ser, gps_ser):
     while not exitThread:
         #데이터가 있있다면
         temp = pm_ser.readline(pm_data_size)
-        if len(temp) == pm_data_size:
-            data = parsing_data(temp)
-            meas_data["pm1"] = data[2]
-            meas_data["pm25"] = data[3]
-            meas_data["pm10"] = data[4]
-            meas_data["temp"] = data[12] / 10.
-            meas_data["humi"] = data[13] / 10.
-            meas_data["timestamp"] = time.time()
 
-            print(meas_data)
+        if len(temp) == pm_data_size:
+            pm_data = parsing_pm_data(temp)
+            if pm_data == -1: continue
+            meas_data["pm1"] = pm_data[2]
+            meas_data["pm25"] = pm_data[3]
+            meas_data["pm10"] = pm_data[4]
+            meas_data["temp"] = pm_data[12] / 10.
+            meas_data["humi"] = pm_data[13] / 10.
         else:
             pm_ser.flushInput()
+            # meas_data["pm1"] = None
+            # meas_data["pm25"] = None
+            # meas_data["pm10"] = None
+            # meas_data["temp"] = None
+            # meas_data["humi"] = None
+
+        temp = gps_ser.readline()
+        gps_data = parsing_gps_data(temp)
+
+        if gps_data == -1: continue
+        if gps_data[0] == "$GPRMC" and gps_data[2] == 'A':
+            # print(gps_data)
+            # data = parsing_gps_data(str)
+            # if data == -1 : break
+            meas_data["long"] = gps_data[3]
+            meas_data["lati"] = gps_data[5]
+
+        else:
+            gps_ser.flushInput()
+            # meas_data["long"] = None
+            # meas_data["lati"] = None
+
+        meas_data["timestamp"] = time.time()
+
+        if None not in meas_data.values():
+            print(meas_data)
+        # print(meas_data)
         time.sleep(1)
 
 if __name__ == "__main__":
@@ -114,4 +154,40 @@ if __name__ == "__main__":
     #시작!
     thread.start()
 
+    pm_status = 0
+    gps_status = 0
+
     # sendData()
+    while True:
+        msg_status = "Not ready"
+        params["field1"] = meas_data["pm1"]
+        params["field2"] = meas_data["pm25"]
+        params["field3"] = meas_data["pm10"]
+        params["field4"] = meas_data["temp"]
+        params["field5"] = meas_data["humi"]
+        params["field6"] = meas_data["long"]
+        params["field7"] = meas_data["lati"]
+        params["field8"] = meas_data["timestamp"]
+
+        if None in [params["field1"], params["field2"], params["field3"], params["field4"], params["field5"]]:
+            pm_status = 0
+        else:
+            pm_status = 1
+
+        if None in [params["field6"], params["field7"]]:
+            gps_status = 0
+        else:
+            gps_status = 1
+
+        if pm_status == 1 and gps_status == 1:
+            res = sendData()
+            print("Data ready and sent", res.status_code, res.text, ' :', meas_data)
+        else:
+            if pm_status == 0:
+                msg_status += " PM"
+            if gps_status == 0:
+                msg_status += " GPS"
+            print(msg_status, ':', meas_data)
+        # if None not in meas_data.values():
+        #     print(sendData())
+        time.sleep(15)
