@@ -1,4 +1,5 @@
 #-*- coding: utf-8 -*-
+import sys
 
 import serial
 import time
@@ -8,7 +9,7 @@ import struct
 import requests
 from datetime import datetime
 
-import Adafruit_GPIO.SPI as SPI
+# import Adafruit_GPIO.SPI as SPI
 import Adafruit_SSD1306
 
 from PIL import Image
@@ -205,55 +206,58 @@ if __name__ == "__main__":
     pm_status = 0
     gps_status = 0
 
-    # sendData()
-    while True:
-        msg_status = "Not ready"
-        params["field1"] = meas_data["pm1"]
-        params["field2"] = meas_data["pm25"]
-        params["field3"] = meas_data["pm10"]
-        params["field4"] = meas_data["temp"]
-        params["field5"] = meas_data["humi"]
-        params["field6"] = meas_data["long"]
-        params["field7"] = meas_data["lati"]
-        params["field8"] = meas_data["timestamp"]
+    try:
+        while True:
+            msg_status = "Not ready"
+            params["field1"] = meas_data["pm1"]
+            params["field2"] = meas_data["pm25"]
+            params["field3"] = meas_data["pm10"]
+            params["field4"] = meas_data["temp"]
+            params["field5"] = meas_data["humi"]
+            params["field6"] = meas_data["long"]
+            params["field7"] = meas_data["lati"]
+            params["field8"] = meas_data["timestamp"]
 
-        if None in [params["field1"], params["field2"], params["field3"], params["field4"], params["field5"]]:
-            pm_status = 0
-        else:
-            pm_status = 1
+            if None in [params["field1"], params["field2"], params["field3"], params["field4"], params["field5"]]:
+                pm_status = 0
+            else:
+                pm_status = 1
 
-        if None in [params["field6"], params["field7"]]:
-            gps_status = 0
-        else:
-            gps_status = 1
+            if None in [params["field6"], params["field7"]]:
+                gps_status = 0
+            else:
+                gps_status = 1
 
-        if pm_status == 1 and gps_status == 1:
-            res = sendData()
-            print("Data ready and sent", res.status_code, res.text, ' :', meas_data)
-        else:
-            if pm_status == 0:
-                msg_status += " PM"
-            if gps_status == 0:
-                msg_status += " GPS"
-            print(msg_status, ':', meas_data)
-        # if None not in meas_data.values():
-        #     print(sendData())
+            if pm_status == 1 and gps_status == 1:
+                res = sendData()
+                print("Data ready and sent", res.status_code, res.text, ' :', meas_data)
+            else:
+                if pm_status == 0:
+                    msg_status += " PM"
+                if gps_status == 0:
+                    msg_status += " GPS"
+                print(msg_status, ':', meas_data)
+            # if None not in meas_data.values():
+            #     print(sendData())
 
-        _date = datetime.fromtimestamp(int(meas_data["timestamp"])).strftime('%m-%d %H:%M')
+            _date = datetime.fromtimestamp(int(meas_data["timestamp"])).strftime('%m-%d %H:%M')
 
-        # Draw a black filled box to clear the image.
-        draw.rectangle((0, 0, width, height), outline=0, fill=0)
-        draw.text((x, top),      "PM1.0: %4s / PM2.5: %4s" \
-                  % ("NA" if meas_data["pm1"] is None else str(meas_data["pm1"]), "NA" if meas_data["pm25"] is None else str(meas_data["pm25"])), font=font, fill=255)
-        draw.text((x, top + 8),  "PM 10: %4s / %11s" \
-                  % ("NA" if meas_data["pm10"] is None else str(meas_data["pm10"]), _date), font=font, fill=255)
-        draw.text((x, top + 16), "Temp:  %4s / Humi:  %4s" \
-                  % ("NA" if meas_data["temp"] is None else str(meas_data["temp"]), "NA" if meas_data["humi"] is None else str(meas_data["humi"])), font=font, fill=255)
-        draw.text((x, top + 24), "LON: %6s / LAT: %6s" \
-                  % ("NA" if meas_data["long"] is None else str(meas_data["long"]), "NA" if meas_data["lati"] is None else str(meas_data["lati"])), font=font, fill=255)
+            # Draw a black filled box to clear the image.
+            draw.rectangle((0, 0, width, height), outline=0, fill=0)
+            draw.text((x, top),      "PM1.0: %4s / PM2.5: %4s" \
+                      % ("NA" if meas_data["pm1"] is None else str(meas_data["pm1"]), "NA" if meas_data["pm25"] is None else str(meas_data["pm25"])), font=font, fill=255)
+            draw.text((x, top + 8),  "PM 10: %4s / %11s" \
+                      % ("NA" if meas_data["pm10"] is None else str(meas_data["pm10"]), _date), font=font, fill=255)
+            draw.text((x, top + 16), "Temp:  %4s / Humi:  %4s" \
+                      % ("NA" if meas_data["temp"] is None else str(meas_data["temp"]), "NA" if meas_data["humi"] is None else str(meas_data["humi"])), font=font, fill=255)
+            draw.text((x, top + 24), "LON: %6s / LAT: %6s" \
+                      % ("NA" if meas_data["long"] is None else str(meas_data["long"]), "NA" if meas_data["lati"] is None else str(meas_data["lati"])), font=font, fill=255)
 
-        # Display image.
-        disp.image(image)
-        disp.display()
+            # Display image.
+            disp.image(image)
+            disp.display()
 
-        time.sleep(update_interval)
+            time.sleep(update_interval)
+    except KeyboardInterrupt:
+        print("Stop Measuring...")
+        sys.exit()
