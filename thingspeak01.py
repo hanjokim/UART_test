@@ -192,7 +192,7 @@ def readThread(pm_ser, gps_ser):
 
 if __name__ == "__main__":
     #종료 시그널 등록
-    signal.signal(signal.SIGINT, handler)
+    # signal.signal(signal.SIGINT, handler)
 
     #시리얼 열기
     pm_ser = serial.Serial(pm_port, pm_baud, timeout=0)
