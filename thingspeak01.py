@@ -96,7 +96,8 @@ exitThread = False   # 쓰레드 종료용 변수
 
 #쓰레드 종료용 시그널 함수
 def handler(signum, frame):
-     exitThread = True
+    print("SIGINT(Ctrl-C) Pressed...Exit Thread.")
+    exitThread = True
 
 # 데이터 처리할 함수
 def parsing_pm_data(packed_data):
