@@ -260,4 +260,5 @@ if __name__ == "__main__":
             time.sleep(update_interval)
     except KeyboardInterrupt:
         print("Stop Measuring...")
+        draw.rectangle((0, 0, width, height), outline=0, fill=0)
         sys.exit()
