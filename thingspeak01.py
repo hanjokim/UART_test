@@ -144,8 +144,6 @@ def parsing_gps_data(gps_bytes):
 
 # 데이터 체크 함수
 def check_gps_data(data):
-    # 데이터 길이, start#1, start#2, Check data 검증
-    # 상하위바이트 취하기 : 데이터 unsigned화 & 0xff
     if '$GPRMC' in data:
         return 1
     else:
