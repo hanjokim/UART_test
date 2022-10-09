@@ -9,12 +9,9 @@ import struct
 import requests
 from datetime import datetime
 
+'''
 # import Adafruit_GPIO.SPI as SPI
 import Adafruit_SSD1306
-
-from PIL import Image
-from PIL import ImageDraw
-from PIL import ImageFont
 
 # Raspberry Pi pin configuration:
 RST = None     # on the PiOLED this pin isnt used
@@ -28,6 +25,22 @@ disp.begin()
 # Clear display.
 disp.clear()
 disp.display()
+'''
+
+import board, busio
+import adafruit_ssd1306
+
+from PIL import Image
+from PIL import ImageDraw
+from PIL import ImageFont
+
+
+i2c = busio.I2C(board.SCL, board.SDA)
+
+disp = adafruit_ssd1306.SSD1306_I2C(128, 32, i2c, addr=0x3c)
+
+disp.fill(0)
+disp.show()
 
 # Create blank image for drawing.
 # Make sure to create image with mode '1' for 1-bit color.
@@ -66,7 +79,7 @@ pm_data_size = 32  # 42(start#1), 4D(start#2), 00 1C(frame length=2*13+2=28/001C
 pm_data_number = 16 # Number of Data
 pm_start_chars = 0x424d
 api_URL = "https://api.thingspeak.com/update"
-update_interval = 5
+update_interval = 15
 params = {
     "api_key"   : "N4NJ5OM3GPEQF6BB",
     "timezone"  : "Asia/Seoul",
@@ -116,10 +129,10 @@ def check_pm_data(data):
         if i != len(data) - 1:
             checksum += (((v+2**16) & 0xff00) >> 8) + (v+2**16 & 0x00ff)
 
-    if len(data) != pm_data_number or data[0] != pm_start_chars or checksum != data[-1] or data[14]+2**16 & 0x00ff:
-        return -1
-    else :
+    if len(data) == pm_data_number and data[0] == pm_start_chars or checksum == data[-1] and data[14] & 0x00ff == 0x00:
         return 1
+    else :
+        return -1
 
 def parsing_gps_data(gps_bytes):
     str = gps_bytes.decode('utf-8')
@@ -133,8 +146,10 @@ def parsing_gps_data(gps_bytes):
 def check_gps_data(data):
     # 데이터 길이, start#1, start#2, Check data 검증
     # 상하위바이트 취하기 : 데이터 unsigned화 & 0xff
-
-    return 1
+    if '$GPRMC' in data:
+        return 1
+    else:
+        return -1
 
 def sendData():
     response = requests.get(api_URL, params=params)
@@ -175,8 +190,8 @@ def readThread(pm_ser, gps_ser):
             # print(gps_data)
             # data = parsing_gps_data(str)
             # if data == -1 : break
-            meas_data["long"] = gps_data[3]
-            meas_data["lati"] = gps_data[5]
+            meas_data["long"] = float(gps_data[3]) if gps_data[3] is not None else None
+            meas_data["lati"] = float(gps_data[5]) if gps_data[5] is not None else None
 
         else:
             gps_ser.flushInput()
@@ -251,15 +266,18 @@ if __name__ == "__main__":
                       % ("NA" if meas_data["pm10"] is None else str(meas_data["pm10"]), _date), font=font, fill=255)
             draw.text((x, top + 16), "Temp:  %4s / Humi:  %4s" \
                       % ("NA" if meas_data["temp"] is None else str(meas_data["temp"]), "NA" if meas_data["humi"] is None else str(meas_data["humi"])), font=font, fill=255)
-            draw.text((x, top + 24), "LON: %6s / LAT: %6s" \
+            draw.text((x, top + 24), "LO: %7s / LA: %7s" \
                       % ("NA" if meas_data["long"] is None else str(meas_data["long"]), "NA" if meas_data["lati"] is None else str(meas_data["lati"])), font=font, fill=255)
 
             # Display image.
             disp.image(image)
-            disp.display()
+            # disp.display()
+            disp.show()
 
             time.sleep(update_interval)
     except KeyboardInterrupt:
         print("Stop Measuring...")
-        draw.rectangle((0, 0, width, height), outline=0, fill=0)
+        exitThread = 1
+        disp.fill(0)
+        disp.show()
         sys.exit()
