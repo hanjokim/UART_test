@@ -79,7 +79,7 @@ pm_data_size = 32  # 42(start#1), 4D(start#2), 00 1C(frame length=2*13+2=28/001C
 pm_data_number = 16 # Number of Data
 pm_start_chars = 0x424d
 api_URL = "https://api.thingspeak.com/update"
-update_interval = 15
+update_interval = 5
 params = {
     "api_key"   : "N4NJ5OM3GPEQF6BB",
     "timezone"  : "Asia/Seoul",
@@ -138,6 +138,7 @@ def parsing_gps_data(gps_bytes):
     str = gps_bytes.decode('utf-8')
     gps_data = str.rstrip().split(',')
     if check_gps_data(gps_data) == 1:
+        # print("gps data check ok")
         return gps_data
     else:
         return -1
@@ -254,7 +255,8 @@ if __name__ == "__main__":
             # if None not in meas_data.values():
             #     print(sendData())
 
-            _date = datetime.fromtimestamp(int(meas_data["timestamp"])).strftime('%m-%d %H:%M')
+            # _date = datetime.fromtimestamp(int(meas_data["timestamp"])).strftime('%m-%d %H:%M')
+            _date = datetime.fromtimestamp(int(meas_data["timestamp"])).strftime('%H:%M:%S')
 
             # Draw a black filled box to clear the image.
             draw.rectangle((0, 0, width, height), outline=0, fill=0)
@@ -272,10 +274,22 @@ if __name__ == "__main__":
             # disp.display()
             disp.show()
 
+            meas_data["pm1"]        = None
+            meas_data["pm25"]       = None
+            meas_data["pm10"]       = None
+            meas_data["temp"]       = None
+            meas_data["humi"]       = None
+            meas_data["long"]       = None
+            meas_data["lati"]       = None
+            meas_data["timestamp"]  = None
+
             time.sleep(update_interval)
     except KeyboardInterrupt:
         print("Stop Measuring...")
         exitThread = 1
         disp.fill(0)
         disp.show()
+        # time.sleep(1)
+        pm_ser.close()
+        gps_ser.close()
         sys.exit()
