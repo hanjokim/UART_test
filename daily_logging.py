@@ -8,6 +8,8 @@ import threading
 import struct
 import requests
 from datetime import datetime
+import logging
+import logging.handlers
 
 import board, busio
 import adafruit_ssd1306
@@ -25,21 +27,17 @@ pm_data_size = 32  # 42(start#1), 4D(start#2), 00 1C(frame length=2*13+2=28/001C
                 # Data13H(firmware ver), Data13L(error code), Check Code(start#1+start#2+~+Data13 Low 8 bits)
 pm_data_number = 16 # Number of Data
 pm_start_chars = 0x424d
-api_URL = "https://api.thingspeak.com/update"
-update_interval = 15
-params = {
-    "api_key"   : "N4NJ5OM3GPEQF6BB",
-    "timezone"  : "Asia/Seoul",
-    "field1"    : 0,                # PM1.0
-    "field2"    : 0,                # PM2.5
-    "field3"    : 0,                # PM10
-    "field4"    : 0,                # Temperature
-    "field5"    : 0,                # Humidity
-    "field6"    : 0,                # Longitude
-    "field7"    : 0,                # Latitude
-    "field8"    : 0,                # Altitude
-}
 
+update_interval = 10
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+# formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
+timedfilehandler = logging.handlers.TimedRotatingFileHandler(filename='finedustlog', when='midnight', interval=1, encoding='utf-8', utc=False)
+# timedfilehandler.setFormatter(formatter)
+timedfilehandler.suffix = "%Y%m%d"
+
+logger.addHandler(timedfilehandler)
 meas_data = {
     "pm1"   : None,
     "pm25"  : None,
@@ -68,29 +66,34 @@ image = Image.new('1', (width, height))
 # Get drawing object to draw on image.
 draw = ImageDraw.Draw(image)
 
-# Draw a black filled box to clear the image.
-# draw.rectangle((0,0,width,height), outline=0, fill=0)
-
-# Draw some shapes.
-# First define some constants to allow easy resizing of shapes.
 padding = 0
 top = padding
 bottom = height-padding
 # Move left to right keeping track of the current x position for drawing shapes.
 x = 0
 
-# Load default font.
 # font = ImageFont.load_default()
-
-# Alternatively load a TTF font.  Make sure the .ttf font file is in the same directory as the python script!
-# Some other nice fonts to try: http://www.dafont.com/bitmap.php
 font = ImageFont.truetype('font/pixelmix.ttf', 8)
 
+def disp_OLED(meas_data, dt):
+    draw.rectangle((0, 0, width, height), outline=0, fill=0)
+    draw.text((x, top), "PM1.0: %4s / PM2.5: %4s" \
+              % ("NA" if meas_data["pm1"] is None else str(meas_data["pm1"]),
+                 "NA" if meas_data["pm25"] is None else str(meas_data["pm25"])), font=font, fill=255)
+    draw.text((x, top + 8), "PM 10: %4s / %11s" \
+              % ("NA" if meas_data["pm10"] is None else str(meas_data["pm10"]), dt), font=font, fill=255)
+    draw.text((x, top + 16), "Temp:  %4s / Humi:  %4s" \
+              % ("NA" if meas_data["temp"] is None else str(meas_data["temp"]),
+                 "NA" if meas_data["humi"] is None else str(meas_data["humi"])), font=font, fill=255)
+    draw.text((x, top + 24), "LO: %7s / LA: %7s" \
+              % ("NA" if meas_data["long"] is None else str(meas_data["long"]),
+                 "NA" if meas_data["lati"] is None else str(meas_data["lati"])), font=font, fill=255)
 
-#쓰레드 종료용 시그널 함수
-# def handler(signum, frame):
-#     print("SIGINT(Ctrl-C) Pressed...Exit Thread.")
-#     exitThread = True
+    # Display image.
+    disp.image(image)
+    # disp.display()
+    disp.show()
+
 
 # 데이터 처리할 함수
 def parsing_pm_data(packed_data):
@@ -130,11 +133,6 @@ def check_gps_data(data):
     else:
         return -1
 
-def sendData():
-    response = requests.get(api_URL, params=params)
-    return response
-
-
 #본 쓰레드
 def readThread(pm_ser, gps_ser):
     global line
@@ -165,20 +163,12 @@ def readThread(pm_ser, gps_ser):
 
         else:
             gps_ser.flushInput()
-            # meas_data["long"] = None
-            # meas_data["lati"] = None
 
         meas_data["timestamp"] = time.time()
 
-        # if None not in meas_data.values():
-            # print(meas_data)
-        # print(meas_data)
         time.sleep(1)
 
 if __name__ == "__main__":
-    #종료 시그널 등록
-    # signal.signal(signal.SIGINT, handler)
-
     #시리얼 열기
     pm_ser = serial.Serial(pm_port, pm_baud, timeout=0)
     gps_ser = serial.Serial(gps_port, gps_baud, timeout=0)
@@ -195,55 +185,35 @@ if __name__ == "__main__":
     try:
         while True:
             msg_status = "Not ready"
-            params["field1"] = meas_data["pm1"]
-            params["field2"] = meas_data["pm25"]
-            params["field3"] = meas_data["pm10"]
-            params["field4"] = meas_data["temp"]
-            params["field5"] = meas_data["humi"]
-            params["field6"] = meas_data["long"]
-            params["field7"] = meas_data["lati"]
-            params["field8"] = meas_data["timestamp"]
 
-            if None in [params["field1"], params["field2"], params["field3"], params["field4"], params["field5"]]:
+            if None in [meas_data["pm1"], meas_data["pm25"], meas_data["pm10"], meas_data["temp"], meas_data["humi"]]:
                 pm_status = 0
             else:
                 pm_status = 1
 
-            if None in [params["field6"], params["field7"]]:
+            if None in [meas_data["long"], meas_data["lati"]]:
                 gps_status = 0
             else:
                 gps_status = 1
 
             if pm_status == 1 and gps_status == 1:
-                res = sendData()
-                print("Data ready and sent", res.status_code, res.text, ' :', meas_data)
+                # res = sendData() --> logging
+                dtstring = datetime.now().strftime('%Y/%m/%d %H:%M:%S')
+                logger.info("%s,%f,%f,%f,%f,%f,%f,%f,%f",
+                            dtstring,
+                            meas_data["pm1"], meas_data["pm25"], meas_data["pm10"], meas_data["temp"], meas_data["humi"],
+                            meas_data["long"], meas_data["lati"], meas_data["timestamp"])
+                print("Logged @%s -" % dtstring, meas_data)
             else:
                 if pm_status == 0:
                     msg_status += " PM"
                 if gps_status == 0:
                     msg_status += " GPS"
-                print(msg_status, ':', meas_data)
-            # if None not in meas_data.values():
-            #     print(sendData())
+                print(msg_status, '-', meas_data)
 
-            # _date = datetime.fromtimestamp(int(meas_data["timestamp"])).strftime('%m-%d %H:%M')
-            _date = datetime.fromtimestamp(int(meas_data["timestamp"])).strftime('%H:%M:%S')
+            _dt = datetime.fromtimestamp(int(meas_data["timestamp"])).strftime('%H:%M:%S')
 
-            # Draw a black filled box to clear the image.
-            draw.rectangle((0, 0, width, height), outline=0, fill=0)
-            draw.text((x, top),      "PM1.0: %4s / PM2.5: %4s" \
-                      % ("NA" if meas_data["pm1"] is None else str(meas_data["pm1"]), "NA" if meas_data["pm25"] is None else str(meas_data["pm25"])), font=font, fill=255)
-            draw.text((x, top + 8),  "PM 10: %4s / %11s" \
-                      % ("NA" if meas_data["pm10"] is None else str(meas_data["pm10"]), _date), font=font, fill=255)
-            draw.text((x, top + 16), "Temp:  %4s / Humi:  %4s" \
-                      % ("NA" if meas_data["temp"] is None else str(meas_data["temp"]), "NA" if meas_data["humi"] is None else str(meas_data["humi"])), font=font, fill=255)
-            draw.text((x, top + 24), "LO: %7s / LA: %7s" \
-                      % ("NA" if meas_data["long"] is None else str(meas_data["long"]), "NA" if meas_data["lati"] is None else str(meas_data["lati"])), font=font, fill=255)
-
-            # Display image.
-            disp.image(image)
-            # disp.display()
-            disp.show()
+            disp_OLED(meas_data, _dt)
 
             meas_data["pm1"]        = None
             meas_data["pm25"]       = None
