@@ -84,7 +84,7 @@ def disp_OLED(meas_data, dt):
     draw.text((x, top), "PM1.0: %4s / PM2.5: %4s" \
               % ("NA" if meas_data["pm1"] is None else str(meas_data["pm1"]),
                  "NA" if meas_data["pm25"] is None else str(meas_data["pm25"])), font=font, fill=255)
-    draw.text((x, top + 8), "PM 10: %4s / %11s" \
+    draw.text((x, top + 8), "PM10: %4s %11s" \
               % ("NA" if meas_data["pm10"] is None else str(meas_data["pm10"]), dt), font=font, fill=255)
     draw.text((x, top + 16), "Temp:  %4s / Humi:  %4s" \
               % ("NA" if meas_data["temp"] is None else str(meas_data["temp"]),
@@ -162,16 +162,16 @@ def readThread(pm_ser, gps_ser):
         gps_data = parsing_gps_data(temp)
 
         if gps_data == -1: continue
-        if gps_data[0] == "$GPRMC":
+        if gps_data[0] == "$GPRMC" and gps_data[2] == 'A':
             if gps_data[1] is not None and gps_data[9] is not None:
                 dt_str = datetime.strptime(gps_data[1][0:6] + gps_data[9], '%H%M%S%d%m%y') - timedelta(hours=-9)
                 # print(_td_str, dt_str, dt_str.strftime('%Y-%m-%d %H:%M:%S'))
                 if clock_set is False:
-                    os.system("sudo date -s %s" % dt_str.strftime('%Y-%m-%d +%H:%M:%S'))
-                    clock_set = True
-            if gps_data[2] == 'A':
-                meas_data["long"] = float(gps_data[3]) if gps_data[3] is not None else None
-                meas_data["lati"] = float(gps_data[5]) if gps_data[5] is not None else None
+                    res = os.system("sudo date -s \'%s\'" % dt_str.strftime('%Y-%m-%d %H:%M:%S'))
+                    if res == 0:
+                        clock_set = True
+            meas_data["long"] = float(gps_data[3]) if gps_data[3] is not None else None
+            meas_data["lati"] = float(gps_data[5]) if gps_data[5] is not None else None
 
         else:
             gps_ser.flushInput()
@@ -223,7 +223,7 @@ if __name__ == "__main__":
                     msg_status += " GPS"
                 print(msg_status, '-', meas_data)
 
-            _dt = datetime.fromtimestamp(int(meas_data["timestamp"])).strftime('%H:%M:%S')
+            _dt = datetime.fromtimestamp(int(meas_data["timestamp"])).strftime('%m-%d %H:%M:%S')
 
             disp_OLED(meas_data, _dt)
 
