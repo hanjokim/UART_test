@@ -1,13 +1,16 @@
 #-*- coding: utf-8 -*-
-import sys
+import os
 
+import requests
+import signal
+
+import sys
 import serial
 import time
-import signal
 import threading
 import struct
-import requests
 from datetime import datetime
+from datetime import timedelta
 import logging
 import logging.handlers
 
@@ -50,6 +53,7 @@ meas_data = {
 }
 
 exitThread = False   # 쓰레드 종료용 변수
+clock_set = False
 
 # OLED display initialization
 i2c = busio.I2C(board.SCL, board.SDA)
@@ -86,8 +90,8 @@ def disp_OLED(meas_data, dt):
               % ("NA" if meas_data["temp"] is None else str(meas_data["temp"]),
                  "NA" if meas_data["humi"] is None else str(meas_data["humi"])), font=font, fill=255)
     draw.text((x, top + 24), "LO: %7s / LA: %7s" \
-              % ("NA" if meas_data["long"] is None else str(meas_data["long"]),
-                 "NA" if meas_data["lati"] is None else str(meas_data["lati"])), font=font, fill=255)
+              % ("NA" if meas_data["long"] is None else str(meas_data["long"])[0:8],
+                 "NA" if meas_data["lati"] is None else str(meas_data["lati"])[0:8]), font=font, fill=255)
 
     # Display image.
     disp.image(image)
@@ -137,6 +141,7 @@ def check_gps_data(data):
 def readThread(pm_ser, gps_ser):
     global line
     global exitThread
+    global clock_set
 
     # 쓰레드 종료될때까지 계속 돌림
     while not exitThread:
@@ -157,9 +162,16 @@ def readThread(pm_ser, gps_ser):
         gps_data = parsing_gps_data(temp)
 
         if gps_data == -1: continue
-        if gps_data[0] == "$GPRMC" and gps_data[2] == 'A':
-            meas_data["long"] = float(gps_data[3]) if gps_data[3] is not None else None
-            meas_data["lati"] = float(gps_data[5]) if gps_data[5] is not None else None
+        if gps_data[0] == "$GPRMC":
+            if gps_data[1] is not None and gps_data[9] is not None:
+                dt_str = datetime.strptime(gps_data[1][0:6] + gps_data[9], '%H%M%S%d%m%y') - timedelta(hours=-9)
+                # print(_td_str, dt_str, dt_str.strftime('%Y-%m-%d %H:%M:%S'))
+                if clock_set is False:
+                    os.system("sudo date -s %s" % dt_str.strftime('%Y-%m-%d +%H:%M:%S'))
+                    clock_set = True
+            if gps_data[2] == 'A':
+                meas_data["long"] = float(gps_data[3]) if gps_data[3] is not None else None
+                meas_data["lati"] = float(gps_data[5]) if gps_data[5] is not None else None
 
         else:
             gps_ser.flushInput()
