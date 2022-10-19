@@ -36,7 +36,7 @@ update_interval = 10
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 # formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
-timedfilehandler = logging.handlers.TimedRotatingFileHandler(filename='finedustlog', when='midnight', interval=1, encoding='utf-8', utc=False)
+timedfilehandler = logging.handlers.TimedRotatingFileHandler(filename='log/finedustlog', when='midnight', interval=1, encoding='utf-8', utc=False)
 # timedfilehandler.setFormatter(formatter)
 timedfilehandler.suffix = "%Y%m%d"
 
