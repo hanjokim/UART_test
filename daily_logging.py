@@ -22,9 +22,11 @@ from PIL import ImageDraw
 from PIL import ImageFont
 
 pm_port  = '/dev/ttyAMA1' # 시리얼 포트
-gps_port = '/dev/ttyACM0'
+gps_port = '/dev/ttyAMA2' # GPS on UART TXD3/RXD3 pin 7/29
+# gps_port = '/dev/ttyACM0' # GPS on USB
+
 pm_baud  = 9600 # 시리얼 보드레이트(통신속도) - Plantower PMS5003/7003
-gps_baud = 115200
+gps_baud = 9600
 pm_data_size = 32  # 42(start#1), 4D(start#2), 00 1C(frame length=2*13+2=28/001C), Data#1 ~ Data10,
                 # Data11(temp=Data14(Signed)/10), Data12(humidity=Data15/10)
                 # Data13H(firmware ver), Data13L(error code), Check Code(start#1+start#2+~+Data13 Low 8 bits)
