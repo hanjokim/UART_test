@@ -214,9 +214,10 @@ if __name__ == "__main__":
             else:
                 gps_status = 1
 
+            dtstring = datetime.now().strftime('%Y/%m/%d %H:%M:%S')
+
             if pm_status == 1 and gps_status == 1:
                 # res = sendData() --> logging
-                dtstring = datetime.now().strftime('%Y/%m/%d %H:%M:%S')
                 logger.info("%s,%f,%f,%f,%f,%f,%f,%f,%f",
                             dtstring,
                             meas_data["pm1"], meas_data["pm25"], meas_data["pm10"], meas_data["temp"], meas_data["humi"],
@@ -227,7 +228,7 @@ if __name__ == "__main__":
                     msg_status += " PM"
                 if gps_status == 0:
                     msg_status += " GPS"
-                print(msg_status, '-', meas_data)
+                print(msg_status, dtstring, '-', meas_data)
 
             _dt = datetime.fromtimestamp(int(meas_data["timestamp"])).strftime('%m-%d %H:%M:%S')
 
@@ -249,6 +250,6 @@ if __name__ == "__main__":
         disp.fill(0)
         disp.show()
         # time.sleep(1)
-        pm_ser.close()
-        gps_ser.close()
+        # pm_ser.close()
+        # gps_ser.close()
         sys.exit()
