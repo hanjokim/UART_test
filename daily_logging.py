@@ -124,13 +124,17 @@ def check_pm_data(data):
         return -1
 
 def parsing_gps_data(gps_bytes):
-    str = gps_bytes.decode('utf-8')
-    gps_data = str.rstrip().split(',')
-    if check_gps_data(gps_data) == 1:
-        # print("gps data check ok")
-        return gps_data
-    else:
+    try:
+        str = gps_bytes.decode('utf-8')
+        gps_data = str.rstrip().split(',')
+        if check_gps_data(gps_data) == 1:
+            # print("gps data check ok")
+            return gps_data
+        else:
+            return -1
+    except UnicodeDecodeError:
         return -1
+
 
 # 데이터 체크 함수
 def check_gps_data(data):
@@ -236,7 +240,7 @@ if __name__ == "__main__":
             meas_data["humi"]       = None
             meas_data["long"]       = None
             meas_data["lati"]       = None
-            meas_data["timestamp"]  = None
+            meas_data["timestamp"]  = 0
 
             time.sleep(update_interval)
     except KeyboardInterrupt:
