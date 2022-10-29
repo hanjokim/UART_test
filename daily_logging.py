@@ -167,7 +167,7 @@ def readThread(pm_ser, gps_ser):
         temp = gps_ser.readline()
         gps_data = parsing_gps_data(temp)
 
-        if gps_data == -1: continue
+        if gps_data == -1 or len(gps_data) < 3: continue
         if gps_data[0] == "$GPRMC" and gps_data[2] == 'A':
             if gps_data[1] is not None and gps_data[9] is not None:
                 dt_str = datetime.strptime(gps_data[1][0:6] + gps_data[9], '%H%M%S%d%m%y') - timedelta(hours=-9)
