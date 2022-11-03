@@ -26,7 +26,7 @@ pm_data_size = 32  # 42(start#1), 4D(start#2), 00 1C(frame length=2*13+2=28/001C
 pm_data_number = 16 # Number of Data
 pm_start_chars = 0x424d
 api_URL = "https://api.thingspeak.com/update"
-update_interval = 15
+update_interval = 10
 params = {
     "api_key"   : "N4NJ5OM3GPEQF6BB",
     "timezone"  : "Asia/Seoul",

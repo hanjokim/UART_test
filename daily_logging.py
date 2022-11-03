@@ -23,7 +23,8 @@ from PIL import ImageFont
 
 pm_port  = '/dev/ttyAMA1' # 시리얼 포트
 gps_port = '/dev/ttyAMA2' # GPS on UART TXD3/RXD3 pin 7/29
-# gps_port = '/dev/ttyACM0' # GPS on USB
+# gps_port = '/dev/ttyUSB0' # GPS on USB
+# gps_port = '/dev/ttyACM0' # GPS on USB Ublox7
 
 pm_baud  = 9600 # 시리얼 보드레이트(통신속도) - Plantower PMS5003/7003
 gps_baud = 9600
@@ -104,6 +105,7 @@ def disp_OLED(meas_data, dt):
 # 데이터 처리할 함수
 def parsing_pm_data(packed_data):
     tmp = struct.unpack('!16h', packed_data)
+    print(tmp)
     if check_pm_data(tmp) == 1:
         return tmp
     else:
@@ -188,8 +190,8 @@ def readThread(pm_ser, gps_ser):
 
 if __name__ == "__main__":
     #시리얼 열기
-    pm_ser = serial.Serial(pm_port, pm_baud, timeout=0)
-    gps_ser = serial.Serial(gps_port, gps_baud, timeout=0)
+    pm_ser = serial.Serial(pm_port, pm_baud, timeout=1)
+    gps_ser = serial.Serial(gps_port, gps_baud, timeout=1)
 
     #시리얼 읽을 쓰레드 생성
     thread = threading.Thread(target=readThread, args=(pm_ser, gps_ser, ))
@@ -250,6 +252,6 @@ if __name__ == "__main__":
         disp.fill(0)
         disp.show()
         # time.sleep(1)
-        # pm_ser.close()
-        # gps_ser.close()
+        pm_ser.close()
+        gps_ser.close()
         sys.exit()
