@@ -1,4 +1,7 @@
 import io
+import time
+from datetime import datetime
+from datetime import timedelta
 
 import pynmea2
 import serial
@@ -12,8 +15,9 @@ while 1:
         line = sio.readline()
         msg = pynmea2.parse(line)
         if 'RMC' in msg.identifier():
-            print(msg.fields, msg.status, msg.is_valid, msg.latitude, msg.lat_dir, msg.longitude, msg.lon_dir, msg.datetime)
-            print(dir(msg))
+            print(msg.status, msg.is_valid, msg.latitude, msg.lat_dir, msg.longitude, msg.lon_dir, msg.datetime)
+            dt = msg.datetime - timedelta(hours=-9)
+            print(dt)
         # print(repr(msg))
     except serial.SerialException as e:
         print('Device error: {}'.format(e))
