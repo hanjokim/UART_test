@@ -15,7 +15,7 @@ import logging
 import logging.handlers
 
 import board, busio
-import adafruit_ssd1306
+import adafruit_ssd1306 # pip install adafruit-circuitpython-ssd1306
 
 from PIL import Image
 from PIL import ImageDraw
@@ -60,7 +60,7 @@ clock_set = False
 
 # OLED display initialization
 i2c = busio.I2C(board.SCL, board.SDA)
-disp = adafruit_ssd1306.SSD1306_I2C(128, 32, i2c, addr=0x3c)
+disp = adafruit_ssd1306.SSD1306_I2C(128, 64, i2c, addr=0x3c)
 disp.fill(0)
 disp.show()
 
@@ -80,21 +80,32 @@ bottom = height-padding
 x = 0
 
 # font = ImageFont.load_default()
-font = ImageFont.truetype('font/pixelmix.ttf', 8)
+font = ImageFont.truetype('font/Hack.ttf', 10)
 
 def disp_OLED(meas_data, dt):
     draw.rectangle((0, 0, width, height), outline=0, fill=0)
-    draw.text((x, top), "PM1.0: %4s / PM2.5: %4s" \
-              % ("NA" if meas_data["pm1"] is None else str(meas_data["pm1"]),
-                 "NA" if meas_data["pm25"] is None else str(meas_data["pm25"])), font=font, fill=255)
-    draw.text((x, top + 8), "PM10: %4s %11s" \
-              % ("NA" if meas_data["pm10"] is None else str(meas_data["pm10"]), dt), font=font, fill=255)
-    draw.text((x, top + 16), "Temp:  %4s / Humi:  %4s" \
-              % ("NA" if meas_data["temp"] is None else str(meas_data["temp"]),
-                 "NA" if meas_data["humi"] is None else str(meas_data["humi"])), font=font, fill=255)
-    draw.text((x, top + 24), "LO: %7s / LA: %7s" \
-              % ("NA" if meas_data["long"] is None else str(meas_data["long"])[0:8],
-                 "NA" if meas_data["lati"] is None else str(meas_data["lati"])[0:8]), font=font, fill=255)
+    if height == 32:
+        draw.text((x, top), "PM1.0: %3s / PM2.5: %-3s" \
+                  % ("-" if meas_data["pm1"] is None else str(meas_data["pm1"]),
+                     "-" if meas_data["pm25"] is None else str(meas_data["pm25"])), font=font, fill=255)
+        draw.text((x, top + 8), "PM 10: %-3s %-11s" \
+                  % ("-" if meas_data["pm10"] is None else str(meas_data["pm10"]), _dt[5:]), font=font, fill=255)
+        draw.text((x, top + 16), "Temp: %-4s / Humi: %-4s" \
+                  % ("-" if meas_data["temp"] is None else str(meas_data["temp"]),
+                     "-" if meas_data["humi"] is None else str(meas_data["humi"])), font=font, fill=255)
+        draw.text((x, top + 24), "LO: %-7s / LA: %-7s" \
+                  % ("-" if meas_data["long"] is None else str(meas_data["long"])[0:8],
+                     "-" if meas_data["lati"] is None else str(meas_data["lati"])[0:8]), font=font, fill=255)
+    else:
+        draw.text((x, top), "%19s" % (_dt), font=font, fill=255)
+        draw.text((x, top + 10), "PM1/2.5/10: %-3s/%-3s/%-3s" \
+                  % ("-" if meas_data["pm1"] is None else str(meas_data["pm1"]),
+                     "-" if meas_data["pm25"] is None else str(meas_data["pm25"]),
+                     "-" if meas_data["pm10"] is None else str(meas_data["pm10"])), font=font, fill=255)
+        draw.text((x, top + 20), "Temp: %-4sC" % ("-" if meas_data["temp"] is None else str(meas_data["temp"])), font=font, fill=255)
+        draw.text((x, top + 30), "Humi: %-4s%%" % ("-" if meas_data["humi"] is None else str(meas_data["humi"])), font=font, fill=255)
+        draw.text((x, top + 40), "Long: %-10s" % ("-" if meas_data["long"] is None else str(meas_data["long"])), font=font, fill=255)
+        draw.text((x, top + 50), "Lati: %-10s" % ("-" if meas_data["lati"] is None else str(meas_data["lati"])), font=font, fill=255)
 
     # Display image.
     disp.image(image)
@@ -232,7 +243,7 @@ if __name__ == "__main__":
                     msg_status += " GPS"
                 print(msg_status, dtstring, '-', meas_data)
 
-            _dt = datetime.fromtimestamp(int(meas_data["timestamp"])).strftime('%m-%d %H:%M:%S')
+            _dt = datetime.fromtimestamp(int(meas_data["timestamp"])).strftime('%Y-%m-%d %H:%M:%S')
 
             disp_OLED(meas_data, _dt)
 
