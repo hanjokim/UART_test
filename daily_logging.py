@@ -22,9 +22,9 @@ from PIL import ImageDraw
 from PIL import ImageFont
 
 pm_port  = '/dev/ttyAMA1' # 시리얼 포트
-gps_port = '/dev/ttyAMA2' # GPS on UART TXD3/RXD3 pin 7/29
+# gps_port = '/dev/ttyAMA2' # GPS on UART TXD3/RXD3 pin 7/29
 # gps_port = '/dev/ttyUSB0' # GPS on USB
-# gps_port = '/dev/ttyACM0' # GPS on USB Ublox7
+gps_port = '/dev/ttyACM0' # GPS on USB Ublox7
 
 pm_baud  = 9600 # 시리얼 보드레이트(통신속도) - Plantower PMS5003/7003
 gps_baud = 9600
