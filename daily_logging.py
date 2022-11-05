@@ -89,7 +89,7 @@ def disp_OLED(meas_data, dt):
                   % ("-" if meas_data["pm1"] is None else str(meas_data["pm1"]),
                      "-" if meas_data["pm25"] is None else str(meas_data["pm25"])), font=font, fill=255)
         draw.text((x, top + 8), "PM 10: %-3s %-11s" \
-                  % ("-" if meas_data["pm10"] is None else str(meas_data["pm10"]), _dt[5:]), font=font, fill=255)
+                  % ("-" if meas_data["pm10"] is None else str(meas_data["pm10"]), dt[5:]), font=font, fill=255)
         draw.text((x, top + 16), "Temp: %-4s / Humi: %-4s" \
                   % ("-" if meas_data["temp"] is None else str(meas_data["temp"]),
                      "-" if meas_data["humi"] is None else str(meas_data["humi"])), font=font, fill=255)
@@ -97,7 +97,7 @@ def disp_OLED(meas_data, dt):
                   % ("-" if meas_data["long"] is None else str(meas_data["long"])[0:8],
                      "-" if meas_data["lati"] is None else str(meas_data["lati"])[0:8]), font=font, fill=255)
     else:
-        draw.text((x, top), "%19s" % (_dt), font=font, fill=255)
+        draw.text((x, top), "%19s" % (dt), font=font, fill=255)
         draw.text((x, top + 10), "PM1/2.5/10: %-3s/%-3s/%-3s" \
                   % ("-" if meas_data["pm1"] is None else str(meas_data["pm1"]),
                      "-" if meas_data["pm25"] is None else str(meas_data["pm25"]),
@@ -140,6 +140,7 @@ def parsing_gps_data(gps_bytes):
     try:
         str = gps_bytes.decode('utf-8')
         gps_data = str.rstrip().split(',')
+        print(gps_data)
         if check_gps_data(gps_data) == 1:
             # print("gps data check ok")
             return gps_data
@@ -205,7 +206,7 @@ if __name__ == "__main__":
     gps_ser = serial.Serial(gps_port, gps_baud, timeout=1)
 
     #시리얼 읽을 쓰레드 생성
-    thread = threading.Thread(target=readThread, args=(pm_ser, gps_ser, ))
+    thread = threading.Thread(target=readThread, args=(pm_ser, gps_ser))
 
     #시작!
     thread.start()

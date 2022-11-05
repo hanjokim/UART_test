@@ -74,6 +74,6 @@ draw.text(
 oled.image(image)
 oled.show()
 
-time.sleep(3)
+time.sleep(5)
 oled.fill(0)
 oled.show()
