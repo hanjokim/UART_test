@@ -204,7 +204,7 @@ def readThread(pm_ser, gps_ser):
 if __name__ == "__main__":
     #시리얼 열기
     pm_ser = serial.Serial(pm_port, pm_baud, timeout=1)
-    gps_ser = serial.Serial(gps_port, gps_baud, timeout=0.5)
+    gps_ser = serial.Serial(gps_port, gps_baud, timeout=1)
 
     #시리얼 읽을 쓰레드 생성
     thread = threading.Thread(target=readThread, args=(pm_ser, gps_ser, ))
