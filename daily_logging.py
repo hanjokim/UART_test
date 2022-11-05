@@ -140,6 +140,7 @@ def parsing_gps_data(gps_bytes):
     try:
         str = gps_bytes.decode('utf-8')
         gps_data = str.rstrip().split(',')
+        print(gps_data)
         if check_gps_data(gps_data) == 1:
             # print("gps data check ok")
             return gps_data
