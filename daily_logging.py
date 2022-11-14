@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import os
 
 import requests
@@ -15,23 +15,23 @@ import logging
 import logging.handlers
 
 import board, busio
-import adafruit_ssd1306 # pip install adafruit-circuitpython-ssd1306
+import adafruit_ssd1306  # pip install adafruit-circuitpython-ssd1306
 
 from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
 
-pm_port  = '/dev/ttyAMA1' # 시리얼 포트
-# gps_port = '/dev/ttyAMA2' # GPS on UART TXD3/RXD3 pin 7/29
-# gps_port = '/dev/ttyUSB0' # GPS on USB
-gps_port = '/dev/ttyACM0' # GPS on USB Ublox7
+pm_port  = '/dev/ttyAMA1'  # 시리얼 포트
+# gps_port = '/dev/ttyAMA2'  # GPS on UART TXD3/RXD3 pin 7/29
+# gps_port = '/dev/ttyUSB0'  # GPS on USB
+gps_port = '/dev/ttyACM0'  # GPS on USB Ublox7
 
-pm_baud  = 9600 # 시리얼 보드레이트(통신속도) - Plantower PMS5003/7003
+pm_baud  = 9600  # 시리얼 보드레이트(통신속도) - Plantower PMS5003/7003
 gps_baud = 115200
 pm_data_size = 32  # 42(start#1), 4D(start#2), 00 1C(frame length=2*13+2=28/001C), Data#1 ~ Data10,
                 # Data11(temp=Data14(Signed)/10), Data12(humidity=Data15/10)
                 # Data13H(firmware ver), Data13L(error code), Check Code(start#1+start#2+~+Data13 Low 8 bits)
-pm_data_number = 16 # Number of Data
+pm_data_number = 16  # Number of Data
 pm_start_chars = 0x424d
 
 update_interval = 10
@@ -82,30 +82,35 @@ x = 0
 # font = ImageFont.load_default()
 font = ImageFont.truetype('font/Hack.ttf', 10)
 
+
 def disp_OLED(meas_data, dt):
     draw.rectangle((0, 0, width, height), outline=0, fill=0)
     if height == 32:
-        draw.text((x, top), "PM1.0: %3s / PM2.5: %-3s" \
+        draw.text((x, top), "PM1.0: %3s / PM2.5: %-3s"
                   % ("-" if meas_data["pm1"] is None else str(meas_data["pm1"]),
                      "-" if meas_data["pm25"] is None else str(meas_data["pm25"])), font=font, fill=255)
-        draw.text((x, top + 8), "PM 10: %-3s %-11s" \
-                  % ("-" if meas_data["pm10"] is None else str(meas_data["pm10"]), _dt[5:]), font=font, fill=255)
-        draw.text((x, top + 16), "Temp: %-4s / Humi: %-4s" \
+        draw.text((x, top + 8), "PM 10: %-3s %-11s"
+                  % ("-" if meas_data["pm10"] is None else str(meas_data["pm10"]), dt[5:]), font=font, fill=255)
+        draw.text((x, top + 16), "Temp: %-4s / Humi: %-4s"
                   % ("-" if meas_data["temp"] is None else str(meas_data["temp"]),
                      "-" if meas_data["humi"] is None else str(meas_data["humi"])), font=font, fill=255)
-        draw.text((x, top + 24), "LO: %-7s / LA: %-7s" \
+        draw.text((x, top + 24), "LO: %-7s / LA: %-7s"
                   % ("-" if meas_data["long"] is None else str(meas_data["long"])[0:8],
                      "-" if meas_data["lati"] is None else str(meas_data["lati"])[0:8]), font=font, fill=255)
     else:
-        draw.text((x, top), "%19s" % (_dt), font=font, fill=255)
-        draw.text((x, top + 10), "PM1/2.5/10:%-3s/%-3s/%-3s" \
+        draw.text((x, top), "%19s" % dt, font=font, fill=255)
+        draw.text((x, top + 10), "PM1/2.5/10:%-3s/%-3s/%-3s"
                   % ("-" if meas_data["pm1"] is None else str(meas_data["pm1"]),
                      "-" if meas_data["pm25"] is None else str(meas_data["pm25"]),
                      "-" if meas_data["pm10"] is None else str(meas_data["pm10"])), font=font, fill=255)
-        draw.text((x, top + 20), "Temp: %-4sC" % ("-" if meas_data["temp"] is None else str(meas_data["temp"])), font=font, fill=255)
-        draw.text((x, top + 30), "Humi: %-4s%%" % ("-" if meas_data["humi"] is None else str(meas_data["humi"])), font=font, fill=255)
-        draw.text((x, top + 40), "Long: %-10s" % ("-" if meas_data["long"] is None else str(meas_data["long"])), font=font, fill=255)
-        draw.text((x, top + 50), "Lati: %-10s" % ("-" if meas_data["lati"] is None else str(meas_data["lati"])), font=font, fill=255)
+        draw.text((x, top + 20), "Temp: %-4sC"
+                  % ("-" if meas_data["temp"] is None else str(meas_data["temp"])), font=font, fill=255)
+        draw.text((x, top + 30), "Humi: %-4s%%"
+                  % ("-" if meas_data["humi"] is None else str(meas_data["humi"])), font=font, fill=255)
+        draw.text((x, top + 40), "Long: %-10s"
+                  % ("-" if meas_data["long"] is None else str(meas_data["long"])), font=font, fill=255)
+        draw.text((x, top + 50), "Lati: %-10s"
+                  % ("-" if meas_data["lati"] is None else str(meas_data["lati"])), font=font, fill=255)
 
     # Display image.
     disp.image(image)
@@ -122,6 +127,7 @@ def parsing_pm_data(packed_data):
     else:
         return -1
 
+
 # 데이터 체크 함수
 def check_pm_data(data):
     # 데이터 길이, start#1, start#2, Check data 검증
@@ -133,13 +139,14 @@ def check_pm_data(data):
 
     if len(data) == pm_data_number and data[0] == pm_start_chars or checksum == data[-1] and data[14] & 0x00ff == 0x00:
         return 1
-    else :
+    else:
         return -1
+
 
 def parsing_gps_data(gps_bytes):
     try:
-        str = gps_bytes.decode('utf-8')
-        gps_data = str.rstrip().split(',')
+        gps_str = gps_bytes.decode('utf-8')
+        gps_data = gps_str.rstrip().split(',')
         print(gps_data)
         if check_gps_data(gps_data) == 1:
             # print("gps data check ok")
@@ -157,9 +164,10 @@ def check_gps_data(data):
     else:
         return -1
 
-#본 쓰레드
+
+# 본 쓰레드
 def readThread(pm_ser, gps_ser):
-    global line
+    # global line
     global exitThread
     global clock_set
 
@@ -202,15 +210,16 @@ def readThread(pm_ser, gps_ser):
 
         time.sleep(1)
 
+
 if __name__ == "__main__":
-    #시리얼 열기
+    # 시리얼 열기
     pm_ser = serial.Serial(pm_port, pm_baud, timeout=1)
     gps_ser = serial.Serial(gps_port, gps_baud, timeout=1)
 
-    #시리얼 읽을 쓰레드 생성
+    # 시리얼 읽을 쓰레드 생성
     thread = threading.Thread(target=readThread, args=(pm_ser, gps_ser, ))
 
-    #시작!
+    # 시작!
     thread.start()
 
     pm_status = 0
