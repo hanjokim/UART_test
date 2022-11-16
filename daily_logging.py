@@ -33,6 +33,7 @@ pm_data_size = 32  # 42(start#1), 4D(start#2), 00 1C(frame length=2*13+2=28/001C
                 # Data13H(firmware ver), Data13L(error code), Check Code(start#1+start#2+~+Data13 Low 8 bits)
 pm_data_number = 16 # Number of Data
 pm_start_chars = 0x424d
+is_PMS7000T = True
 
 update_interval = 10
 
@@ -86,26 +87,49 @@ def disp_OLED(meas_data, dt):
     draw.rectangle((0, 0, width, height), outline=0, fill=0)
     if height == 32:
         draw.text((x, top), "PM1.0: %3s / PM2.5: %-3s" \
-                  % ("-" if meas_data["pm1"] is None else str(meas_data["pm1"]),
-                     "-" if meas_data["pm25"] is None else str(meas_data["pm25"])), font=font, fill=255)
+                  % (str(meas_data["pm1"] if meas_data["pm1"] else "-"),
+                     str(meas_data["pm25"] if meas_data["pm25"] else "-")), font=font, fill=255)
         draw.text((x, top + 8), "PM 10: %-3s %-11s" \
-                  % ("-" if meas_data["pm10"] is None else str(meas_data["pm10"]), _dt[5:]), font=font, fill=255)
+                  % (str(meas_data["pm10"] if meas_data["pm10"] else "-"), dt[5:]), font=font, fill=255)
         draw.text((x, top + 16), "Temp: %-4s / Humi: %-4s" \
-                  % ("-" if meas_data["temp"] is None else str(meas_data["temp"]),
-                     "-" if meas_data["humi"] is None else str(meas_data["humi"])), font=font, fill=255)
+                  % (str(meas_data["temp"] if meas_data["temp"] else "-"),
+                     str(meas_data["humi1"] if meas_data["humi"] else "-")), font=font, fill=255)
         draw.text((x, top + 24), "LO: %-7s / LA: %-7s" \
-                  % ("-" if meas_data["long"] is None else str(meas_data["long"])[0:8],
-                     "-" if meas_data["lati"] is None else str(meas_data["lati"])[0:8]), font=font, fill=255)
+                  % (str(meas_data["long"] if meas_data["long"] else "-")[0:8],
+                     str(meas_data["lati"] if meas_data["lati"] else "-")[0:8]), font=font, fill=255)
     else:
-        draw.text((x, top), "%19s" % (_dt), font=font, fill=255)
+        draw.text((x, top), "%19s" % dt, font=font, fill=255)
         draw.text((x, top + 10), "PM1/2.5/10:%-3s/%-3s/%-3s" \
-                  % ("-" if meas_data["pm1"] is None else str(meas_data["pm1"]),
-                     "-" if meas_data["pm25"] is None else str(meas_data["pm25"]),
-                     "-" if meas_data["pm10"] is None else str(meas_data["pm10"])), font=font, fill=255)
-        draw.text((x, top + 20), "Temp: %-4sC" % ("-" if meas_data["temp"] is None else str(meas_data["temp"])), font=font, fill=255)
-        draw.text((x, top + 30), "Humi: %-4s%%" % ("-" if meas_data["humi"] is None else str(meas_data["humi"])), font=font, fill=255)
-        draw.text((x, top + 40), "Long: %-10s" % ("-" if meas_data["long"] is None else str(meas_data["long"])), font=font, fill=255)
-        draw.text((x, top + 50), "Lati: %-10s" % ("-" if meas_data["lati"] is None else str(meas_data["lati"])), font=font, fill=255)
+                  % (str(meas_data["pm1"] if meas_data["pm1"] else "-"),
+                     str(meas_data["pm25"] if meas_data["pm25"] else "-"),
+                     str(meas_data["pm10"] if meas_data["pm10"] else "-")), font=font, fill=255)
+        draw.text((x, top + 20), "Temp: %-4sC" % str(meas_data["temp"] if meas_data["temp"] else "-"), font=font, fill=255)
+        draw.text((x, top + 30), "Humi: %-4s%%" % str(meas_data["humi"] if meas_data["humi"] else "-"), font=font, fill=255)
+        draw.text((x, top + 40), "Long: %-10s" % str(meas_data["long"] if meas_data["long"] else "-"), font=font, fill=255)
+        draw.text((x, top + 50), "Lati: %-10s" % str(meas_data["lati"] if meas_data["lati"] else "-"), font=font, fill=255)
+
+    # if height == 32:
+    #     draw.text((x, top), "PM1.0: %3s / PM2.5: %-3s" \
+    #               % ("-" if meas_data["pm1"] is None else str(meas_data["pm1"]),
+    #                  "-" if meas_data["pm25"] is None else str(meas_data["pm25"])), font=font, fill=255)
+    #     draw.text((x, top + 8), "PM 10: %-3s %-11s" \
+    #               % ("-" if meas_data["pm10"] is None else str(meas_data["pm10"]), _dt[5:]), font=font, fill=255)
+    #     draw.text((x, top + 16), "Temp: %-4s / Humi: %-4s" \
+    #               % ("-" if meas_data["temp"] is None else str(meas_data["temp"]),
+    #                  "-" if meas_data["humi"] is None else str(meas_data["humi"])), font=font, fill=255)
+    #     draw.text((x, top + 24), "LO: %-7s / LA: %-7s" \
+    #               % ("-" if meas_data["long"] is None else str(meas_data["long"])[0:8],
+    #                  "-" if meas_data["lati"] is None else str(meas_data["lati"])[0:8]), font=font, fill=255)
+    # else:
+    #     draw.text((x, top), "%19s" % (_dt), font=font, fill=255)
+    #     draw.text((x, top + 10), "PM1/2.5/10:%-3s/%-3s/%-3s" \
+    #               % ("-" if meas_data["pm1"] is None else str(meas_data["pm1"]),
+    #                  "-" if meas_data["pm25"] is None else str(meas_data["pm25"]),
+    #                  "-" if meas_data["pm10"] is None else str(meas_data["pm10"])), font=font, fill=255)
+    #     draw.text((x, top + 20), "Temp: %-4sC" % ("-" if meas_data["temp"] is None else str(meas_data["temp"])), font=font, fill=255)
+    #     draw.text((x, top + 30), "Humi: %-4s%%" % ("-" if meas_data["humi"] is None else str(meas_data["humi"])), font=font, fill=255)
+    #     draw.text((x, top + 40), "Long: %-10s" % ("-" if meas_data["long"] is None else str(meas_data["long"])), font=font, fill=255)
+    #     draw.text((x, top + 50), "Lati: %-10s" % ("-" if meas_data["lati"] is None else str(meas_data["lati"])), font=font, fill=255)
 
     # Display image.
     disp.image(image)
@@ -174,8 +198,8 @@ def readThread(pm_ser, gps_ser):
             meas_data["pm1"] = pm_data[2]
             meas_data["pm25"] = pm_data[3]
             meas_data["pm10"] = pm_data[4]
-            meas_data["temp"] = pm_data[12] / 10.
-            meas_data["humi"] = pm_data[13] / 10.
+            meas_data["temp"] = (pm_data[12] / 10.) if is_PMS7000T else None
+            meas_data["humi"] = (pm_data[13] / 10.) if is_PMS7000T else None
         else:
             pm_ser.flushInput()
 
@@ -192,8 +216,8 @@ def readThread(pm_ser, gps_ser):
                     res = os.system("sudo date -s \'%s\'" % dt_str.strftime('%Y-%m-%d %H:%M:%S'))
                     if res == 0:
                         clock_set = True
-            meas_data["long"] = float(gps_data[3]) if gps_data[3] is not None else None
-            meas_data["lati"] = float(gps_data[5]) if gps_data[5] is not None else None
+            meas_data["long"] = float(gps_data[3]) if gps_data[3] else None
+            meas_data["lati"] = float(gps_data[5]) if gps_data[5] else None
 
         else:
             gps_ser.flushInput()
