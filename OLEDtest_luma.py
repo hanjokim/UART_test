@@ -18,7 +18,7 @@ font = ImageFont.truetype('font/pixelmix.ttf', 8)
 
 # Box and text rendered in portrait mode
 with canvas(device) as draw:
-    draw.rectangle(device.bounding_box, outline="white", fill="black")
+    draw.rectangle((0, 0, device.width-1, device.height-1), outline="white", fill="black")
     draw.text((0, 0), "1234567890123456789012", font=font, fill="white")
     draw.text((0, 10), "Hello World", font=font, fill="white")
     draw.text((0, 20), "Hello World", font=font, fill="white")
