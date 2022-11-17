@@ -1,8 +1,8 @@
 #-*- coding: utf-8 -*-
 import os
 
-import requests
-import signal
+# import requests
+# import signal
 
 import sys
 import serial
@@ -11,7 +11,7 @@ import threading
 import struct
 from datetime import datetime
 from datetime import timedelta
-import logging
+# import logging
 import logging.handlers
 
 import board, busio
@@ -60,8 +60,10 @@ exitThread = False   # 쓰레드 종료용 변수
 clock_set = False
 
 # OLED display initialization
+oled_width = 128
+oled_height = 64
 i2c = busio.I2C(board.SCL, board.SDA)
-disp = adafruit_ssd1306.SSD1306_I2C(128, 64, i2c, addr=0x3c)
+disp = adafruit_ssd1306.SSD1306_I2C(oled_width, oled_height, i2c, addr=0x3c)
 disp.fill(0)
 disp.show()
 
@@ -81,7 +83,7 @@ bottom = height - padding
 x = 0
 
 # font = ImageFont.load_default()
-font = ImageFont.truetype('font/Hack.ttf', 10)
+font = ImageFont.truetype('font/Hack.ttf', 10 if oled_height == 64 else 8)
 
 def disp_OLED(meas_data, dt):
     draw.rectangle((0, 0, width, height), outline=0, fill=0)
@@ -93,7 +95,7 @@ def disp_OLED(meas_data, dt):
                   % (str(meas_data["pm10"] if meas_data["pm10"] else "-"), dt[5:]), font=font, fill=255)
         draw.text((x, top + 16), "Temp: %-4s / Humi: %-4s" \
                   % (str(meas_data["temp"] if meas_data["temp"] else "-"),
-                     str(meas_data["humi1"] if meas_data["humi"] else "-")), font=font, fill=255)
+                     str(meas_data["humi"] if meas_data["humi"] else "-")), font=font, fill=255)
         draw.text((x, top + 24), "LO: %-7s / LA: %-7s" \
                   % (str(meas_data["long"] if meas_data["long"] else "-")[0:8],
                      str(meas_data["lati"] if meas_data["lati"] else "-")[0:8]), font=font, fill=255)
