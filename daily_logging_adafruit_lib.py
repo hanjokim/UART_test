@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#-*- coding: utf-8 -*-
 import os
 
 # import requests
@@ -13,6 +13,9 @@ from datetime import datetime
 from datetime import timedelta
 # import logging
 import logging.handlers
+
+# import adafruit_ssd1306 # pip install adafruit-circuitpython-ssd1306
+# import board, busio
 
 from luma.core.interface.serial import i2c
 from luma.core.render import canvas
@@ -60,19 +63,39 @@ meas_data = {
 exitThread = False   # 쓰레드 종료용 변수
 clock_set = False
 
+# oled_width = 128
+# oled_height = 64
+
+# # OLED display initialization for adafruit library
+# i2c = busio.I2C(board.SCL, board.SDA)
+# disp = adafruit_ssd1306.SSD1306_I2C(oled_width, oled_height, i2c, addr=0x3c)
+# disp.fill(0)
+# disp.show()
+#
+# # Create blank image for drawing.
+# # Make sure to create image with mode '1' for 1-bit color.
+# width = disp.width
+# height = disp.height
+# image = Image.new('1', (width, height))
+#
+# # Get drawing object to draw on image.
+# draw = ImageDraw.Draw(image)
+
 iface = i2c(port=1, address=0x3C)
 # device = ssd1306(iface, rotate=0)
 device = sh1106(iface, rotate=0)
-
 width = device.width
 height = device.height
+
+# font = ImageFont.load_default()
+font = ImageFont.truetype('font/Hack.ttf', 10 if height == 64 else 8)
+
+# draw = canvas(device)
+
 padding = 0
 top = padding
 bottom = height - padding
 x = 0
-
-# font = ImageFont.load_default()
-font = ImageFont.truetype('font/Hack.ttf', 10 if height == 64 else 8)
 
 def disp_OLED(meas_data, dt):
     with canvas(device) as draw:
@@ -99,6 +122,11 @@ def disp_OLED(meas_data, dt):
             draw.text((x, top + 30), "Humi: %-4s%%" % str(meas_data["humi"] if meas_data["humi"] else "-"), font=font, fill=255)
             draw.text((x, top + 40), "Long: %-10s" % str(meas_data["long"] if meas_data["long"] else "-"), font=font, fill=255)
             draw.text((x, top + 50), "Lati: %-10s" % str(meas_data["lati"] if meas_data["lati"] else "-"), font=font, fill=255)
+
+    # # Display image for adafruit library
+    # disp.image(image)
+    # disp.show()
+
 
 # 데이터 처리할 함수
 def parsing_pm_data(packed_data):
@@ -250,7 +278,11 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("Stop Measuring...")
         exitThread = 1
+
+        # disp.fill(0)
+        # disp.show()
         device.hide()
+
         pm_ser.close()
         gps_ser.close()
         sys.exit()
