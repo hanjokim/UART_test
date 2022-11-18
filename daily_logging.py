@@ -4,6 +4,7 @@ import os
 # import requests
 # import signal
 
+import configparser
 import sys
 import serial
 import time
@@ -22,21 +23,36 @@ from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
 
-pm_port  = '/dev/ttyAMA1' # 시리얼 포트
+conf_values = configparser.ConfigParser()
+conf_values.read('config.ini')
+general = conf_values['GENERAL']
+pm = conf_values['PM']
+gps = conf_values['GPS']
+
+# pm_port  = '/dev/ttyAMA1' # 시리얼 포트
 # gps_port = '/dev/ttyAMA2' # GPS on UART TXD3/RXD3 pin 7/29
 # gps_port = '/dev/ttyUSB0' # GPS on USB
-gps_port = '/dev/ttyACM0' # GPS on USB Ublox7
+# gps_port = '/dev/ttyACM0' # GPS on USB Ublox7
+# pm_baud  = 9600 # 시리얼 보드레이트(통신속도) - Plantower PMS5003/7003
+# gps_baud = 115200
+# pm_data_size = 32  # 42(start#1), 4D(start#2), 00 1C(frame length=2*13+2=28/001C), Data#1 ~ Data10,
+#                 # Data11(temp=Data14(Signed)/10), Data12(humidity=Data15/10)
+#                 # Data13H(firmware ver), Data13L(error code), Check Code(start#1+start#2+~+Data13 Low 8 bits)
+# pm_data_number = 16 # Number of Data
 
-pm_baud  = 9600 # 시리얼 보드레이트(통신속도) - Plantower PMS5003/7003
-gps_baud = 115200
-pm_data_size = 32  # 42(start#1), 4D(start#2), 00 1C(frame length=2*13+2=28/001C), Data#1 ~ Data10,
-                # Data11(temp=Data14(Signed)/10), Data12(humidity=Data15/10)
-                # Data13H(firmware ver), Data13L(error code), Check Code(start#1+start#2+~+Data13 Low 8 bits)
-pm_data_number = 16 # Number of Data
-pm_start_chars = 0x424d
-is_PMS7003T = True
+pm_port = pm['pm_port']
+gps_port = gps['gps_port']
 
-update_interval = 10
+pm_baud = pm.getint('pm_baud')
+gps_baud = gps.getint('gps_baud')
+
+pm_data_size = pm.getint('pm_data_size')
+pm_data_number = pm.getint('pm_data_number')
+pm_start_chars = hex(int(pm['pm_start_chars'], 16))
+is_PMS7003T = pm.getboolean('is_PMS7003T')
+oled_driver = general['oled']
+
+update_interval = general.getint('update_interval')
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -61,8 +77,13 @@ exitThread = False   # 쓰레드 종료용 변수
 clock_set = False
 
 iface = i2c(port=1, address=0x3C)
-# device = ssd1306(iface, rotate=0)
-device = sh1106(iface, rotate=0)
+if oled_driver == 'ssd1306':
+    device = ssd1306(iface, rotate=0)
+elif oled_driver == 'sh1106':
+    device = sh1106(iface, rotate=0)
+else:
+    print("OLED driver configuation error in config.ini")
+    sys.exit()
 
 width = device.width
 height = device.height
