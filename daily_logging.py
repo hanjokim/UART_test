@@ -82,7 +82,7 @@ if oled_driver == 'ssd1306':
 elif oled_driver == 'sh1106':
     device = sh1106(iface, rotate=0)
 else:
-    print("OLED driver configuation error in config.ini")
+    print("OLED driver configuration error in config.ini")
     sys.exit()
 
 width = device.width
@@ -93,33 +93,20 @@ bottom = height - padding
 x = 0
 
 # font = ImageFont.load_default()
-font = ImageFont.truetype('font/Hack.ttf', 10 if height == 64 else 8)
+font = ImageFont.truetype('font/Hack.ttf', 10)
 
 def disp_OLED(meas_data, dt):
     with canvas(device) as draw:
         draw.rectangle((0, 0, width-1, height-1), outline=0, fill=0)
-        if height == 32:
-            draw.text((x, top), "PM1.0: %3s / PM2.5: %-3s" \
-                      % (str(meas_data["pm1"] if meas_data["pm1"] else "-"),
-                         str(meas_data["pm25"] if meas_data["pm25"] else "-")), font=font, fill=255)
-            draw.text((x, top + 8), "PM 10: %-3s %-11s" \
-                      % (str(meas_data["pm10"] if meas_data["pm10"] else "-"), dt[5:]), font=font, fill=255)
-            draw.text((x, top + 16), "Temp: %-4s / Humi: %-4s" \
-                      % (str(meas_data["temp"] if meas_data["temp"] else "-"),
-                         str(meas_data["humi"] if meas_data["humi"] else "-")), font=font, fill=255)
-            draw.text((x, top + 24), "LO: %-7s / LA: %-7s" \
-                      % (str(meas_data["long"] if meas_data["long"] else "-")[0:8],
-                         str(meas_data["lati"] if meas_data["lati"] else "-")[0:8]), font=font, fill=255)
-        else:
-            draw.text((x, top), "%19s" % dt, font=font, fill=255)
-            draw.text((x, top + 10), "PM1/2.5/10:%-3s/%-3s/%-3s" \
-                      % (str(meas_data["pm1"] if meas_data["pm1"] else "-"),
-                         str(meas_data["pm25"] if meas_data["pm25"] else "-"),
-                         str(meas_data["pm10"] if meas_data["pm10"] else "-")), font=font, fill=255)
-            draw.text((x, top + 20), "Temp: %-4sC" % str(meas_data["temp"] if meas_data["temp"] else "-"), font=font, fill=255)
-            draw.text((x, top + 30), "Humi: %-4s%%" % str(meas_data["humi"] if meas_data["humi"] else "-"), font=font, fill=255)
-            draw.text((x, top + 40), "Long: %-10s" % str(meas_data["long"] if meas_data["long"] else "-"), font=font, fill=255)
-            draw.text((x, top + 50), "Lati: %-10s" % str(meas_data["lati"] if meas_data["lati"] else "-"), font=font, fill=255)
+        draw.text((x, top), "%19s" % dt, font=font, fill=255)
+        draw.text((x, top + 10), "PM1/2.5/10:%-3s/%-3s/%-3s" \
+                  % (str(meas_data["pm1"] if meas_data["pm1"] else "-"),
+                     str(meas_data["pm25"] if meas_data["pm25"] else "-"),
+                     str(meas_data["pm10"] if meas_data["pm10"] else "-")), font=font, fill=255)
+        draw.text((x, top + 20), "Temp: %-4sC" % str(meas_data["temp"] if meas_data["temp"] else "-"), font=font, fill=255)
+        draw.text((x, top + 30), "Humi: %-4s%%" % str(meas_data["humi"] if meas_data["humi"] else "-"), font=font, fill=255)
+        draw.text((x, top + 40), "Long: %-10s" % str(meas_data["long"] if meas_data["long"] else "-"), font=font, fill=255)
+        draw.text((x, top + 50), "Lati: %-10s" % str(meas_data["lati"] if meas_data["lati"] else "-"), font=font, fill=255)
 
 # 데이터 처리할 함수
 def parsing_pm_data(packed_data):
