@@ -35,13 +35,17 @@ gps_port = gps['gps_port']
 pm_baud = pm.getint('pm_baud')
 gps_baud = gps.getint('gps_baud')
 
+pm_timeout = pm.getfloat('pm_timeout')
+gps_timeout = gps.getfloat('gps_timeout')
+
 pm_data_size = pm.getint('pm_data_size')
 pm_data_number = pm.getint('pm_data_number')
 pm_start_chars = hex(int(pm['pm_start_chars'], 16))
 is_PMS7003T = pm.getboolean('is_PMS7003T')
 oled_driver = general['oled']
 
-update_interval = general.getint('update_interval')
+update_interval = general.getfloat('update_interval')
+thread_interval = general.getfloat('thread_interval')
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -126,7 +130,6 @@ def parsing_gps_data(gps_bytes):
         gps_data = str.rstrip().split(',')
         if check_gps_data(gps_data) == 1:
             print(gps_data)
-            # print("gps data check ok")
             return gps_data
         else:
             return -1
@@ -171,7 +174,6 @@ def readThread(pm_ser, gps_ser):
         if gps_data[0] == "$GPRMC" and gps_data[2] == 'A':
             if gps_data[1] is not None and gps_data[9] is not None:
                 dt_str = datetime.strptime(gps_data[1][0:6] + gps_data[9], '%H%M%S%d%m%y') - timedelta(hours=-9)
-                # print(_td_str, dt_str, dt_str.strftime('%Y-%m-%d %H:%M:%S'))
                 if clock_set is False:
                     res = os.system("sudo date -s \'%s\'" % dt_str.strftime('%Y-%m-%d %H:%M:%S'))
                     if res == 0:
@@ -184,12 +186,12 @@ def readThread(pm_ser, gps_ser):
 
         meas_data["timestamp"] = time.time()
 
-        time.sleep(0.5)
+        time.sleep(thread_interval)
 
 if __name__ == "__main__":
     #시리얼 열기
-    pm_ser = serial.Serial(pm_port, pm_baud, timeout=1)
-    gps_ser = serial.Serial(gps_port, gps_baud, timeout=0.5)
+    pm_ser = serial.Serial(pm_port, pm_baud, timeout=pm_timeout)
+    gps_ser = serial.Serial(gps_port, gps_baud, timeout=gps_timeout)
 
     #시리얼 읽을 쓰레드 생성
     thread = threading.Thread(target=readThread, args=(pm_ser, gps_ser, ))
