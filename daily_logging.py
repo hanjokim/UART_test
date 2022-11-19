@@ -29,17 +29,6 @@ general = conf_values['GENERAL']
 pm = conf_values['PM']
 gps = conf_values['GPS']
 
-# pm_port  = '/dev/ttyAMA1' # 시리얼 포트
-# gps_port = '/dev/ttyAMA2' # GPS on UART TXD3/RXD3 pin 7/29
-# gps_port = '/dev/ttyUSB0' # GPS on USB
-# gps_port = '/dev/ttyACM0' # GPS on USB Ublox7
-# pm_baud  = 9600 # 시리얼 보드레이트(통신속도) - Plantower PMS5003/7003
-# gps_baud = 115200
-# pm_data_size = 32  # 42(start#1), 4D(start#2), 00 1C(frame length=2*13+2=28/001C), Data#1 ~ Data10,
-#                 # Data11(temp=Data14(Signed)/10), Data12(humidity=Data15/10)
-#                 # Data13H(firmware ver), Data13L(error code), Check Code(start#1+start#2+~+Data13 Low 8 bits)
-# pm_data_number = 16 # Number of Data
-
 pm_port = pm['pm_port']
 gps_port = gps['gps_port']
 
