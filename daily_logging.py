@@ -135,8 +135,8 @@ def parsing_gps_data(gps_bytes):
     try:
         str = gps_bytes.decode('utf-8')
         gps_data = str.rstrip().split(',')
-        print(gps_data)
         if check_gps_data(gps_data) == 1:
+            print(gps_data)
             # print("gps data check ok")
             return gps_data
         else:
@@ -195,12 +195,12 @@ def readThread(pm_ser, gps_ser):
 
         meas_data["timestamp"] = time.time()
 
-        time.sleep(1)
+        time.sleep(0.5)
 
 if __name__ == "__main__":
     #시리얼 열기
     pm_ser = serial.Serial(pm_port, pm_baud, timeout=1)
-    gps_ser = serial.Serial(gps_port, gps_baud, timeout=1)
+    gps_ser = serial.Serial(gps_port, gps_baud, timeout=0.5)
 
     #시리얼 읽을 쓰레드 생성
     thread = threading.Thread(target=readThread, args=(pm_ser, gps_ser, ))
