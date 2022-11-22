@@ -40,7 +40,7 @@ gps_timeout = gps.getfloat('gps_timeout')
 
 pm_data_size = pm.getint('pm_data_size')
 pm_data_number = pm.getint('pm_data_number')
-pm_start_chars = hex(int(pm['pm_start_chars'], 16))
+pm_start_chars = int(pm['pm_start_chars'], 16)
 is_PMS7003T = pm.getboolean('is_PMS7003T')
 oled_driver = general['oled']
 
@@ -63,7 +63,7 @@ meas_data = {
     "humi"  : None,
     "long"  : None,
     "lati"  : None,
-    "timestamp"  : 0.,
+    "timestamp"  : None,
 }
 
 exitThread = False   # 쓰레드 종료용 변수
@@ -88,16 +88,14 @@ x = 0
 # font = ImageFont.load_default()
 font = ImageFont.truetype('font/Hack.ttf', 10)
 
-def disp_OLED(meas_data, dt):
+def disp_OLED(meas_data):
     with canvas(device) as draw:
         draw.rectangle((0, 0, width-1, height-1), outline=0, fill=0)
-        draw.text((x, top), "%19s" % dt, font=font, fill=255)
-        draw.text((x, top + 10), "PM1/2.5/10:%-3s/%-3s/%-3s" \
-                  % (str(meas_data["pm1"] if meas_data["pm1"] else "-"),
-                     str(meas_data["pm25"] if meas_data["pm25"] else "-"),
-                     str(meas_data["pm10"] if meas_data["pm10"] else "-")), font=font, fill=255)
-        draw.text((x, top + 20), "Temp: %-4sC" % str(meas_data["temp"] if meas_data["temp"] else "-"), font=font, fill=255)
-        draw.text((x, top + 30), "Humi: %-4s%%" % str(meas_data["humi"] if meas_data["humi"] else "-"), font=font, fill=255)
+        draw.text((x, top), "%19s" % meas_data['timestamp'] if meas_data['timestamp'] else "Waiting for data...", font=font, fill=255)
+        draw.text((x, top + 10), "PM1/2.5/10:%-3s/%-3s/%-3s" % (str(meas_data["pm1"] if meas_data["pm1"] else "-"),
+             str(meas_data["pm25"] if meas_data["pm25"] else "-"), str(meas_data["pm10"] if meas_data["pm10"] else "-")), font=font, fill=255)
+        draw.text((x, top + 20), "Temp: %-4s'C" % str(meas_data["temp"] if meas_data["temp"] else "-"), font=font, fill=255)
+        draw.text((x, top + 30), "Humi: %-4s %%" % str(meas_data["humi"] if meas_data["humi"] else "-"), font=font, fill=255)
         draw.text((x, top + 40), "Long: %-10s" % str(meas_data["long"] if meas_data["long"] else "-"), font=font, fill=255)
         draw.text((x, top + 50), "Lati: %-10s" % str(meas_data["lati"] if meas_data["lati"] else "-"), font=font, fill=255)
 
@@ -119,7 +117,7 @@ def check_pm_data(data):
         if i != len(data) - 1:
             checksum += (((v+2**16) & 0xff00) >> 8) + (v+2**16 & 0x00ff)
 
-    if len(data) == pm_data_number and data[0] == pm_start_chars or checksum == data[-1] and data[14] & 0x00ff == 0x00:
+    if len(data) == pm_data_number and data[0] == pm_start_chars and checksum == data[-1] and data[14] & 0x00ff == 0x00:
         return 1
     else :
         return -1
@@ -156,13 +154,13 @@ def readThread(pm_ser, gps_ser):
 
         if len(temp) == pm_data_size:
             pm_data = parsing_pm_data(temp)
-            if pm_data == -1:
-                continue
-            meas_data["pm1"] = pm_data[2]
-            meas_data["pm25"] = pm_data[3]
-            meas_data["pm10"] = pm_data[4]
-            meas_data["temp"] = (pm_data[12] / 10.) if is_PMS7003T else None
-            meas_data["humi"] = (pm_data[13] / 10.) if is_PMS7003T else None
+            if pm_data != -1:
+                # continue
+                meas_data["pm1"] = pm_data[2]
+                meas_data["pm25"] = pm_data[3]
+                meas_data["pm10"] = pm_data[4]
+                meas_data["temp"] = (pm_data[12] / 10.) if is_PMS7003T else None
+                meas_data["humi"] = (pm_data[13] / 10.) if is_PMS7003T else None
         else:
             pm_ser.flushInput()
 
@@ -172,7 +170,7 @@ def readThread(pm_ser, gps_ser):
         if gps_data == -1 or len(gps_data) < 3:
             continue
         if gps_data[0] == "$GPRMC" and gps_data[2] == 'A':
-            if gps_data[1] is not None and gps_data[9] is not None:
+            if gps_data[1] and gps_data[9]:
                 dt_str = datetime.strptime(gps_data[1][0:6] + gps_data[9], '%H%M%S%d%m%y') - timedelta(hours=-9)
                 if clock_set is False:
                     res = os.system("sudo date -s \'%s\'" % dt_str.strftime('%Y-%m-%d %H:%M:%S'))
@@ -184,7 +182,8 @@ def readThread(pm_ser, gps_ser):
         else:
             gps_ser.flushInput()
 
-        meas_data["timestamp"] = time.time()
+        # meas_data["timestamp"] = time.time()
+        meas_data["timestamp"] = datetime.now().strftime('%Y/%m/%d %H:%M:%S')
 
         time.sleep(thread_interval)
 
@@ -216,7 +215,8 @@ if __name__ == "__main__":
             else:
                 gps_status = 1
 
-            dtstring = datetime.now().strftime('%Y/%m/%d %H:%M:%S')
+            # dtstring = datetime.now().strftime('%Y/%m/%d %H:%M:%S')
+            dtstring = meas_data['timestamp']
 
             if pm_status == 1 and gps_status == 1:
                 # res = sendData() --> logging
@@ -224,7 +224,7 @@ if __name__ == "__main__":
                             dtstring,
                             meas_data["pm1"], meas_data["pm25"], meas_data["pm10"], meas_data["temp"], meas_data["humi"],
                             meas_data["long"], meas_data["lati"], meas_data["timestamp"])
-                print("Logged @%s -" % dtstring, meas_data)
+                print("Logged @%s -" % meas_data)
             else:
                 if pm_status == 0:
                     msg_status += " PM"
@@ -232,9 +232,9 @@ if __name__ == "__main__":
                     msg_status += " GPS"
                 print(msg_status, dtstring, '-', meas_data)
 
-            _dt = datetime.fromtimestamp(int(meas_data["timestamp"])).strftime('%Y-%m-%d %H:%M:%S')
+            # _dt = datetime.fromtimestamp(int(meas_data["timestamp"])).strftime('%Y-%m-%d %H:%M:%S')
 
-            disp_OLED(meas_data, _dt)
+            disp_OLED(meas_data)
 
             meas_data["pm1"]        = None
             meas_data["pm25"]       = None
@@ -243,7 +243,7 @@ if __name__ == "__main__":
             meas_data["humi"]       = None
             meas_data["long"]       = None
             meas_data["lati"]       = None
-            meas_data["timestamp"]  = 0
+            meas_data["timestamp"]  = None
 
             time.sleep(update_interval)
     except KeyboardInterrupt:
