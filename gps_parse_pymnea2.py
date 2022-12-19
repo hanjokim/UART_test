@@ -7,8 +7,8 @@ import pynmea2
 import serial
 
 
-# ser = serial.Serial('/dev/ttyAMA2', 9600, timeout=1)                      # RPi GPIO
-ser = serial.Serial('/dev/ttyACM0', 115200, timeout=1)                      # RPi U-blox7
+ser = serial.Serial('/dev/ttyAMA2', 9600, timeout=1)                      # RPi GPIO
+# ser = serial.Serial('/dev/ttyACM0', 115200, timeout=1)                      # RPi U-blox7
 # ser = serial.Serial('/dev/cu.usbserial-A50285BI', 9600, timeout=1)      # Mac USB-FTDI
 sio = io.TextIOWrapper(io.BufferedRWPair(ser, ser))
 
