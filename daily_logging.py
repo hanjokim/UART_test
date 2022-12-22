@@ -222,10 +222,10 @@ if __name__ == "__main__":
 
             if pm_status == 1 and gps_status == 1:
                 # res = sendData() --> logging
-                logger.info("%s,%f,%f,%f,%f,%f,%f,%f,%f",
+                logger.info("%s,%f,%f,%f,%f,%f,%f,%f",
                             dtstring,
                             meas_data["pm1"], meas_data["pm25"], meas_data["pm10"], meas_data["temp"], meas_data["humi"],
-                            meas_data["long"], meas_data["lati"], meas_data["timestamp"])
+                            meas_data["long"], meas_data["lati"])
                 print("Logged @%s -" % meas_data)
             else:
                 if pm_status == 0:
