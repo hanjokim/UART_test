@@ -15,7 +15,9 @@ sio = io.TextIOWrapper(io.BufferedRWPair(ser, ser))
 while 1:
     try:
         line = sio.readline()
+        print(line)
         msg = pynmea2.parse(line)
+        print(msg)
         if 'RMC' in msg.identifier():
             print(msg)
             print(msg.status, msg.is_valid, msg.latitude, msg.lat_dir, msg.longitude, msg.lon_dir)

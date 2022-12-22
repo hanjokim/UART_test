@@ -43,6 +43,7 @@ pm_data_number = pm.getint('pm_data_number')
 pm_start_chars = int(pm['pm_start_chars'], 16)
 is_PMS7003T = pm.getboolean('is_PMS7003T')
 oled_driver = general['oled']
+disp_rotate = int(general['disp_rotate'])
 
 update_interval = general.getfloat('update_interval')
 thread_interval = general.getfloat('thread_interval')
@@ -71,9 +72,9 @@ clock_set = False
 
 iface = i2c(port=1, address=0x3C)
 if oled_driver == 'ssd1306':
-    device = ssd1306(iface, rotate=0)
+    device = ssd1306(iface, rotate=disp_rotate)
 elif oled_driver == 'sh1106':
-    device = sh1106(iface, rotate=0)
+    device = sh1106(iface, rotate=disp_rotate)
 else:
     print("OLED driver configuration error in config.ini")
     sys.exit()
@@ -126,6 +127,7 @@ def parsing_gps_data(gps_bytes):
     try:
         str = gps_bytes.decode('utf-8')
         gps_data = str.rstrip().split(',')
+        print(gps_data)
         if check_gps_data(gps_data) == 1:
             print(gps_data)
             return gps_data
