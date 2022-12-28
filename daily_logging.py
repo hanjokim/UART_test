@@ -127,7 +127,6 @@ def parsing_gps_data(gps_bytes):
     try:
         str = gps_bytes.decode('utf-8')
         gps_data = str.rstrip().split(',')
-        print(gps_data)
         if check_gps_data(gps_data) == 1:
             print(gps_data)
             return gps_data
@@ -169,17 +168,16 @@ def readThread(pm_ser, gps_ser):
         temp = gps_ser.readline()
         gps_data = parsing_gps_data(temp)
 
-        if gps_data == -1 or len(gps_data) < 3:
-            continue
-        if gps_data[0] == "$GPRMC" and gps_data[2] == 'A':
-            if gps_data[1] and gps_data[9]:
-                dt_str = datetime.strptime(gps_data[1][0:6] + gps_data[9], '%H%M%S%d%m%y') - timedelta(hours=-9)
-                if clock_set is False:
-                    res = os.system("sudo date -s \'%s\'" % dt_str.strftime('%Y-%m-%d %H:%M:%S'))
-                    if res == 0:
-                        clock_set = True
-            meas_data["long"] = float(gps_data[3]) if gps_data[3] else None
-            meas_data["lati"] = float(gps_data[5]) if gps_data[5] else None
+        if gps_data != -1 and len(gps_data) >= 3:
+            if gps_data[0] == "$GPRMC" and gps_data[2] == 'A':
+                if gps_data[1] and gps_data[9]:
+                    dt_str = datetime.strptime(gps_data[1][0:6] + gps_data[9], '%H%M%S%d%m%y') - timedelta(hours=-9)
+                    if clock_set is False:
+                        res = os.system("sudo date -s \'%s\'" % dt_str.strftime('%Y-%m-%d %H:%M:%S'))
+                        if res == 0:
+                            clock_set = True
+                meas_data["long"] = float(gps_data[3]) if gps_data[3] else None
+                meas_data["lati"] = float(gps_data[5]) if gps_data[5] else None
 
         else:
             gps_ser.flushInput()
