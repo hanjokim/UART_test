@@ -70,13 +70,19 @@ meas_data = {
 exitThread = False   # 쓰레드 종료용 변수
 clock_set = False
 
-iface = i2c(port=1, address=0x3C)
-if oled_driver == 'ssd1306':
-    device = ssd1306(iface, rotate=disp_rotate)
-elif oled_driver == 'sh1106':
-    device = sh1106(iface, rotate=disp_rotate)
-else:
-    print("OLED driver configuration error in config.ini")
+device = None
+
+try:
+    iface = i2c(port=1, address=0x3C)
+    if oled_driver == 'ssd1306':
+        device = ssd1306(iface, rotate=disp_rotate)
+    elif oled_driver == 'sh1106':
+        device = sh1106(iface, rotate=disp_rotate)
+    else:
+        print("OLED driver configuration error in config.ini")
+        sys.exit()
+except Exception as e:
+    print("Display device initialization error:", e)
     sys.exit()
 
 width = device.width
@@ -128,7 +134,7 @@ def parsing_gps_data(gps_bytes):
         str = gps_bytes.decode('utf-8')
         gps_data = str.rstrip().split(',')
         if check_gps_data(gps_data) == 1:
-            print(gps_data)
+            # print(gps_data)
             return gps_data
         else:
             return -1

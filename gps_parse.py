@@ -5,7 +5,8 @@ from datetime import timedelta
 from serial import Serial
 from pynmeagps import NMEAReader
 # stream = Serial('/dev/ttyACM0', 9600, timeout=0) # RPi USB
-stream = Serial('/dev/cu.usbserial-A50285BI', 9600, timeout=1) # Mac USB
+stream = Serial('/dev/ttyUSB0', 115200, timeout=1) # RPi USB
+# stream = Serial('/dev/cu.usbserial-A50285BI', 9600, timeout=1) # Mac USB
 nmr = NMEAReader(stream)
 while True:
     (_r, _data) = nmr.read()
