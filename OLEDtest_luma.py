@@ -11,8 +11,8 @@ from time import sleep
 serial = i2c(port=1, address=0x3C)
 
 # substitute ssd1331(...) or sh1106(...) below if using that device
-device = ssd1306(serial, rotate=0)
-# device = sh1106(serial, rotate=0)
+# device = ssd1306(serial, rotate=0)
+device = sh1106(serial, rotate=2)
 
 font = ImageFont.truetype('font/pixelmix.ttf', 8)
 
