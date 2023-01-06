@@ -134,7 +134,7 @@ def parsing_gps_data(gps_bytes):
         str = gps_bytes.decode('utf-8')
         gps_data = str.rstrip().split(',')
         if check_gps_data(gps_data) == 1:
-            # print(gps_data)
+            print(gps_data)
             return gps_data
         else:
             return -1
@@ -230,7 +230,7 @@ if __name__ == "__main__":
                             dtstring,
                             meas_data["pm1"], meas_data["pm25"], meas_data["pm10"], meas_data["temp"], meas_data["humi"],
                             meas_data["long"], meas_data["lati"])
-                print("Logged @%s -" % meas_data)
+                print("Logged - %s" % meas_data)
             else:
                 if pm_status == 0:
                     msg_status += " PM"
