@@ -239,7 +239,7 @@ if __name__ == "__main__":
                             dtstring,
                             meas_data["pm1"], meas_data["pm25"], meas_data["pm10"], meas_data["temp"], meas_data["humi"],
                             meas_data["long"], meas_data["lati"])
-                print("Logged - %s" % meas_data)
+                print("Logged OK- %s" % meas_data)
             else:
                 if pm_status == 0:
                     msg_status += " PM"
