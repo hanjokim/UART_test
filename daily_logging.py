@@ -48,6 +48,9 @@ disp_rotate = int(general['disp_rotate'])
 update_interval = general.getfloat('update_interval')
 thread_interval = general.getfloat('thread_interval')
 
+pm_err_count = 0
+gps_err_count = 0
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 # formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
@@ -109,7 +112,7 @@ def disp_OLED(meas_data):
 # 데이터 처리할 함수
 def parsing_pm_data(packed_data):
     tmp = struct.unpack('!16h', packed_data)
-    print(tmp)
+    print(f'PM input data : {tmp}')
     if check_pm_data(tmp) == 1:
         return tmp
     else:
@@ -134,7 +137,7 @@ def parsing_gps_data(gps_bytes):
         str = gps_bytes.decode('utf-8')
         gps_data = str.rstrip().split(',')
         if check_gps_data(gps_data) == 1:
-            print(gps_data)
+            print(f'GPS input data : {gps_data}')
             return gps_data
         else:
             return -1
@@ -154,6 +157,7 @@ def readThread(pm_ser, gps_ser):
     global line
     global exitThread
     global clock_set
+    global pm_err_count
 
     # 쓰레드 종료될때까지 계속 돌림
     while not exitThread:
@@ -169,7 +173,7 @@ def readThread(pm_ser, gps_ser):
                 meas_data["temp"] = (pm_data[12] / 10.) if is_PMS7003T else None
                 meas_data["humi"] = (pm_data[13] / 10.) if is_PMS7003T else None
         else:
-            pm_ser.flushInput()
+            pm_ser.reset_input_buffer()
 
         temp = gps_ser.readline()
         gps_data = parsing_gps_data(temp)
@@ -213,8 +217,13 @@ if __name__ == "__main__":
 
             if None in [meas_data["pm1"], meas_data["pm25"], meas_data["pm10"], meas_data["temp"], meas_data["humi"]]:
                 pm_status = 0
+                pm_err_count += 1
+                print(f"PM input error : {pm_err_count=}")
+                # if pm_err_count > 5:
+                #     pm_reset()
             else:
                 pm_status = 1
+                pm_err_count = 0
 
             if None in [meas_data["long"], meas_data["lati"]]:
                 gps_status = 0
