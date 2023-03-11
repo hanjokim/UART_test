@@ -236,7 +236,7 @@ if __name__ == "__main__":
             if pm_status == 1 and (gps_status == 1 or clock_set == True):
                 print(f"{pm_status=}, {gps_status=}, {clock_set=}")
                 # res = sendData() --> logging
-                logger.info(f'{dtstring},{meas_data["pm1"]},{meas_data["pm25"]},{meas_data["pm10"]},{meas_data["temp"]},{meas_data["humi"]},{meas_data["long"]}, {meas_data["lati"]}')
+                logger.info(f'{dtstring},{meas_data["pm1"]},{meas_data["pm25"]},{meas_data["pm10"]},{meas_data["temp"]},{meas_data["humi"]},{meas_data["long"]},{meas_data["lati"]}')
                 # logger.info("%s,%.1f,%.1f,%.1f,%.1f,%.1f,%.5f,%.5f",
                 #             dtstring,
                 #             meas_data["pm1"], meas_data["pm25"], meas_data["pm10"], meas_data["temp"], meas_data["humi"],
