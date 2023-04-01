@@ -192,7 +192,6 @@ def readThread(pm_ser, gps_ser):
         else:
             gps_ser.flushInput()
 
-        # meas_data["timestamp"] = time.time()
         meas_data["timestamp"] = datetime.now().strftime('%Y/%m/%d %H:%M:%S')
 
         time.sleep(thread_interval)
