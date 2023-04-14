@@ -67,7 +67,7 @@ meas_data = {
     "humi"  : None,
     "long"  : None,
     "lati"  : None,
-    "timestamp"  : None,
+    "timestamp"  : "",
 }
 
 exitThread = False   # 쓰레드 종료용 변수
@@ -147,7 +147,7 @@ def parsing_gps_data(gps_bytes):
 
 # 데이터 체크 함수
 def check_gps_data(data):
-    if '$GPRMC' in data:
+    if '$GPRMC' in data or '$GNRMC' in data:
         return 1
     else:
         return -1
@@ -179,7 +179,7 @@ def readThread(pm_ser, gps_ser):
         gps_data = parsing_gps_data(temp)
 
         if gps_data != -1 and len(gps_data) >= 3:
-            if gps_data[0] == "$GPRMC" and gps_data[2] == 'A':
+            if (gps_data[0] == "$GPRMC" or gps_data[0] == "$GNRMC") and gps_data[2] == 'A':
                 if gps_data[1] and gps_data[9]:
                     dt_str = datetime.strptime(gps_data[1][0:6] + gps_data[9], '%H%M%S%d%m%y') - timedelta(hours=-9)
                     if clock_set is False:
