@@ -67,7 +67,7 @@ meas_data = {
     "humi"  : None,
     "long"  : None,
     "lati"  : None,
-    "timestamp"  : None,
+    "timestamp"  : "",
 }
 
 exitThread = False   # 쓰레드 종료용 변수
@@ -147,7 +147,7 @@ def parsing_gps_data(gps_bytes):
 
 # 데이터 체크 함수
 def check_gps_data(data):
-    if '$GPRMC' in data:
+    if '$GPRMC' in data or '$GNRMC' in data:
         return 1
     else:
         return -1
@@ -179,7 +179,7 @@ def readThread(pm_ser, gps_ser):
         gps_data = parsing_gps_data(temp)
 
         if gps_data != -1 and len(gps_data) >= 3:
-            if gps_data[0] == "$GPRMC" and gps_data[2] == 'A':
+            if (gps_data[0] == "$GPRMC" or gps_data[0] == "$GNRMC") and gps_data[2] == 'A':
                 if gps_data[1] and gps_data[9]:
                     dt_str = datetime.strptime(gps_data[1][0:6] + gps_data[9], '%H%M%S%d%m%y') - timedelta(hours=-9)
                     if clock_set is False:
@@ -192,7 +192,6 @@ def readThread(pm_ser, gps_ser):
         else:
             gps_ser.flushInput()
 
-        # meas_data["timestamp"] = time.time()
         meas_data["timestamp"] = datetime.now().strftime('%Y/%m/%d %H:%M:%S')
 
         time.sleep(thread_interval)
@@ -233,12 +232,15 @@ if __name__ == "__main__":
             # dtstring = datetime.now().strftime('%Y/%m/%d %H:%M:%S')
             dtstring = meas_data['timestamp']
 
-            if pm_status == 1 and gps_status == 1:
-                # res = sendData() --> logging
-                logger.info("%s,%.1f,%.1f,%.1f,%.1f,%.1f,%.5f,%.5f",
-                            dtstring,
-                            meas_data["pm1"], meas_data["pm25"], meas_data["pm10"], meas_data["temp"], meas_data["humi"],
-                            meas_data["long"], meas_data["lati"])
+            if pm_status == 1 and (gps_status == 1 or clock_set == True):
+                print(f"{pm_status=}, {gps_status=}, {clock_set=}")
+                # res = sendData() --> loggindg
+                logger.info(f'{dtstring},{meas_data["pm1"]},{meas_data["pm25"]},{meas_data["pm10"]},'
+                            f'{meas_data["temp"]},{meas_data["humi"]},{meas_data["long"]},{meas_data["lati"]}')
+                # logger.info("%s,%.1f,%.1f,%.1f,%.1f,%.1f,%.5f,%.5f",
+                #             dtstring,
+                #             meas_data["pm1"], meas_data["pm25"], meas_data["pm10"], meas_data["temp"], meas_data["humi"],
+                #             meas_data["long"], meas_data["lati"])
                 print("Logged OK- %s" % meas_data)
             else:
                 if pm_status == 0:
