@@ -1,4 +1,20 @@
 # -*- coding: utf-8 -*-
+'''
+1. 수집 날짜 및 시간정보 (ex. 2023/03/20 17:09:43) (10초 간격으로 데이터 수집)
+2. PM1.0 (ex. 27)
+3. PM2.5 (ex. 39)
+4. PM10 (ex. 44)
+5. 온도 (ex. 19.3)
+6. 습도 (ex. 15.3)
+7. 항목 2에서 4의 데이터에 대한 1분간 average (ex. 25, 35, 45)
+8. 항목 2에서 4의 데이터에 대한 1분간 min (ex. 22, 31, 41)
+9. 항목 2에서 4의 데이터에 대한 1분간 max (ex. 28, 39, 48)
+10. 항목 2에서 4의 데이터에 대한 1분간 median (ex. 25, 34, 44)
+11. 항목 2에서 4의 데이터에 대한 1분간 trimmed mean (ex. 25, 35, 45)
+12. 현재 팬 동작 상태 (대기, 자동(1, 2, 3, 4, 5단), 수동(1, 2, 3, 4, 5단)) 'W' / 'A' / 'M'
+13. 장치 오류 알림 "OK" / "ER"
+14. Checksum
+'''
 import os
 
 # import requests
@@ -19,8 +35,8 @@ from luma.core.interface.serial import i2c
 from luma.core.render import canvas
 from luma.oled.device import ssd1306,  sh1106
 
-from PIL import Image
-from PIL import ImageDraw
+# from PIL import Image
+# from PIL import ImageDraw
 from PIL import ImageFont
 
 conf_values = configparser.ConfigParser()
@@ -47,6 +63,17 @@ disp_rotate = int(general['disp_rotate'])
 
 update_interval = general.getfloat('update_interval')
 thread_interval = general.getfloat('thread_interval')
+log_mode = general['log_mode']
+log_interval = general.getint('log_interval')
+average_window = general.getint('average_window')
+sample_no = int(average_window / update_interval)
+# list for average sampling data
+sample_pm1 = []
+sample_pm25 = []
+sample_pm10 = []
+
+fan_status = "W"
+device_status = "OK"
 
 pm_err_count = 0
 gps_err_count = 0
@@ -54,20 +81,24 @@ gps_err_count = 0
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 # formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
-timedfilehandler = logging.handlers.TimedRotatingFileHandler(filename='log/finedustlog', when='midnight', interval=1, encoding='utf-8', utc=False)
+
+if log_mode == 'midnight':
+    log_interval = 1
+
+timedfilehandler = logging.handlers.TimedRotatingFileHandler(filename='log/finedustlog', when=log_mode, interval=log_interval, encoding='utf-8', utc=False)
 # timedfilehandler.setFormatter(formatter)
-timedfilehandler.suffix = "%Y%m%d"
+timedfilehandler.suffix = "%Y%m%d_%H%M%S"
 
 logger.addHandler(timedfilehandler)
 meas_data = {
-    "pm1"   : None,
-    "pm25"  : None,
-    "pm10"  : None,
-    "temp"  : None,
-    "humi"  : None,
-    "long"  : None,
-    "lati"  : None,
-    "timestamp"  : "",
+    "pm1":  None,
+    "pm25": None,
+    "pm10": None,
+    "temp": None,
+    "humi": None,
+    "long": None,
+    "lati": None,
+    "timestamp": "",
 }
 
 exitThread = False   # 쓰레드 종료용 변수
@@ -98,6 +129,7 @@ x = 0
 # font = ImageFont.load_default()
 font = ImageFont.truetype('font/Hack.ttf', 10)
 
+
 def disp_OLED(meas_data):
     with canvas(device) as draw:
         draw.rectangle((0, 0, width-1, height-1), outline=0, fill=0)
@@ -109,6 +141,7 @@ def disp_OLED(meas_data):
         draw.text((x, top + 40), "Long: %-10s" % str(meas_data["long"] if meas_data["long"] else "-"), font=font, fill=255)
         draw.text((x, top + 50), "Lati: %-10s" % str(meas_data["lati"] if meas_data["lati"] else "-"), font=font, fill=255)
 
+
 # 데이터 처리할 함수
 def parsing_pm_data(packed_data):
     tmp = struct.unpack('!16h', packed_data)
@@ -117,6 +150,7 @@ def parsing_pm_data(packed_data):
         return tmp
     else:
         return -1
+
 
 # 데이터 체크 함수
 def check_pm_data(data):
@@ -129,13 +163,14 @@ def check_pm_data(data):
 
     if len(data) == pm_data_number and data[0] == pm_start_chars and checksum == data[-1] and data[14] & 0x00ff == 0x00:
         return 1
-    else :
+    else:
         return -1
+
 
 def parsing_gps_data(gps_bytes):
     try:
-        str = gps_bytes.decode('utf-8')
-        gps_data = str.rstrip().split(',')
+        string = gps_bytes.decode('utf-8')
+        gps_data = string.rstrip().split(',')
         if check_gps_data(gps_data) == 1:
             print(f'GPS input data : {gps_data}')
             return gps_data
@@ -152,7 +187,8 @@ def check_gps_data(data):
     else:
         return -1
 
-#본 쓰레드
+
+# 본 쓰레드
 def readThread(pm_ser, gps_ser):
     global line
     global exitThread
@@ -196,15 +232,44 @@ def readThread(pm_ser, gps_ser):
 
         time.sleep(thread_interval)
 
+
+def get_average(sample_data):
+    pass
+
+
+def get_min(sample_data):
+    pass
+
+
+def get_max(sample_data):
+    pass
+
+
+def get_median(sample_data):
+    pass
+
+
+def get_trimmed_mean(sample_data):
+    pass
+
+
+def get_fan_status():
+    return fan_status
+
+
+def get_device_status():
+    return device_status
+
+
 if __name__ == "__main__":
-    #시리얼 열기
+    # 시리얼 열기
     pm_ser = serial.Serial(pm_port, pm_baud, timeout=pm_timeout)
     gps_ser = serial.Serial(gps_port, gps_baud, timeout=gps_timeout)
 
-    #시리얼 읽을 쓰레드 생성
+    # 시리얼 읽을 쓰레드 생성
     thread = threading.Thread(target=readThread, args=(pm_ser, gps_ser, ))
 
-    #시작!
+    # 시작!
     thread.start()
 
     pm_status = 0
@@ -232,7 +297,7 @@ if __name__ == "__main__":
             # dtstring = datetime.now().strftime('%Y/%m/%d %H:%M:%S')
             dtstring = meas_data['timestamp']
 
-            if pm_status == 1 and (gps_status == 1 or clock_set == True):
+            if pm_status == 1 and (gps_status == 1 or clock_set is True):
                 print(f"{pm_status=}, {gps_status=}, {clock_set=}")
                 # res = sendData() --> loggindg
                 logger.info(f'{dtstring},{meas_data["pm1"]},{meas_data["pm25"]},{meas_data["pm10"]},'
@@ -253,14 +318,14 @@ if __name__ == "__main__":
 
             disp_OLED(meas_data)
 
-            meas_data["pm1"]        = None
-            meas_data["pm25"]       = None
-            meas_data["pm10"]       = None
-            meas_data["temp"]       = None
-            meas_data["humi"]       = None
-            meas_data["long"]       = None
-            meas_data["lati"]       = None
-            meas_data["timestamp"]  = None
+            meas_data["pm1"] =  None
+            meas_data["pm25"] = None
+            meas_data["pm10"] = None
+            meas_data["temp"] = None
+            meas_data["humi"] = None
+            meas_data["long"] = None
+            meas_data["lati"] = None
+            meas_data["timestamp"] = None
 
             time.sleep(update_interval)
     except KeyboardInterrupt:
