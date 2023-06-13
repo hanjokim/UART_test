@@ -4,23 +4,23 @@
 2. PM1.0 (ex. 27)
 3. PM2.5 (ex. 39)
 4. PM10 (ex. 44)
-5. 온도 (ex. 19.3)
-6. 습도 (ex. 15.3)
-7. PM 1.0 1분간 average (ex. 25, 35, 45)
+5. PM 1.0 1분간 average (ex. 25, 35, 45)
+6. PM 2.5 1분간 average (ex. 25, 35, 45)
+7. PM 10 1분간 average (ex. 25, 35, 45)
 8. PM 1.0 1분간 min (ex. 22, 31, 41)
-9. PM 1.0 1분간 max (ex. 28, 39, 48)
-10. PM 1.0 1분간 median (ex. 25, 34, 44)
-11. PM 1.0 1분간 trimmed mean (ex. 25, 35, 45)
-12. PM 2.5 1분간 average (ex. 25, 35, 45)
-13. PM 2.5 1분간 min (ex. 22, 31, 41)
-14. PM 2.5 1분간 max (ex. 28, 39, 48)
+9. PM 2.5 1분간 min (ex. 22, 31, 41)
+10. PM 10 1분간 min (ex. 22, 31, 41)
+11. PM 1.0 1분간 max (ex. 28, 39, 48)
+12. PM 2.5 1분간 max (ex. 28, 39, 48)
+13. PM 10 1분간 max (ex. 28, 39, 48)
+14. PM 1.0 1분간 median (ex. 25, 34, 44)
 15. PM 2.5 1분간 median (ex. 25, 34, 44)
-16. PM 2.5 1분간 trimmed mean (ex. 25, 35, 45)
-17. PM 10 1분간 average (ex. 25, 35, 45)
-18. PM 10 1분간 min (ex. 22, 31, 41)
-19. PM 10 1분간 max (ex. 28, 39, 48)
-20. PM 10 1분간 median (ex. 25, 34, 44)
-21. PM 10 1분간 trimmed mean (ex. 25, 35, 45)
+16. PM 10 1분간 median (ex. 25, 34, 44)
+17. PM 1.0 1분간 trimmed mean (ex. 25, 35, 45)
+18. PM 2.5 1분간 trimmed mean (ex. 25, 35, 45)
+19. PM 10 1분간 trimmed mean (ex. 25, 35, 45)
+20. 온도 (ex. 19.3)
+21. 습도 (ex. 15.3)
 22. 위도
 23. 경도
 24. PM 센서 상태 "OK" / "NG"
@@ -175,23 +175,26 @@ def get_device_status():
     return device_status
 
 
-def get_checksum(data):
-    return 1
-
 def calculate_stats(data, trim_percent):
-    mean = statistics.mean(data)
-    minimum = min(data)
-    maximum = max(data)
-    median = statistics.median(data)
+    temp = [num for num in data if num > 0]
+    if temp == []:
+        return 0, 0, 0, 0, 0
+    mean = statistics.mean(temp)
+    minimum = min(temp)
+    maximum = max(temp)
+    median = statistics.median(temp)
 
-    trim_size = int(len(data) * trim_percent / 100)
-    trimmed_data = sorted(data)[trim_size:-trim_size]
-    trimmed_mean = statistics.mean(trimmed_data)
+    # 상하위 20%를 제외한 데이터로 trimmed mean 계산
+    trim_size = int(len(temp) * trim_percent / 2 / 100)
+    trimmed_data = sorted(temp)[trim_size:-trim_size]
+    if trimmed_data == []:
+        trimmed_mean = mean
+    else:
+        trimmed_mean = statistics.mean(trimmed_data)
 
     return mean, minimum, maximum, median, trimmed_mean
 
 
-# 데이터 처리할 함수
 def parsing_pm_data(packed_data):
     tmp = struct.unpack('!16h', packed_data)
     # print(f'PM input data : {tmp}')
@@ -237,6 +240,23 @@ def check_gps_data(data):
         return -1
 
 
+def calculate_checksum(data):
+    """
+    문자열과 정수, 부동 소수점으로 구성된 리스트의 체크섬을 계산합니다.
+    :param data: 문자열과 숫자로 이루어진 리스트
+    :return: 체크섬 값 (16진수 문자열)
+    """
+    checksum = 0
+
+    for item in data:
+        if isinstance(item, str):
+            item = item.encode()  # 문자열을 바이트로 변환
+
+        checksum += hash(item)
+        checksum &= 0xFFFF  # 16비트로 제한
+
+    return format(checksum, '04X')  # 16진수 문자열로 반환
+
 # 본 쓰레드
 def readThread(pm_ser, gps_ser):
     # global line
@@ -250,6 +270,7 @@ def readThread(pm_ser, gps_ser):
 
     # 쓰레드 종료될때까지 계속 돌림
     while not exitThread:
+        meas_data["timestamp"] = datetime.now().strftime('%Y/%m/%d %H:%M:%S')
         temp = pm_ser.readline(pm_data_size)
 
         if len(temp) == pm_data_size:
@@ -284,13 +305,8 @@ def readThread(pm_ser, gps_ser):
                             clock_set = True
                 meas_data["long"] = float(gps_data[3]) if gps_data[3] else None
                 meas_data["lati"] = float(gps_data[5]) if gps_data[5] else None
-            meas_data["long"] = None
-            meas_data["lati"] = None
-
         else:
             gps_ser.flushInput()
-
-        meas_data["timestamp"] = datetime.now().strftime('%Y/%m/%d %H:%M:%S')
 
         time.sleep(thread_interval)
 
@@ -354,10 +370,18 @@ if __name__ == "__main__":
                 sample_pm10 = []
                 stat_cycle = 0
 
-            checksum = get_checksum(meas_data)
-            print(f'{meas_data=}')
+            checksum = calculate_checksum(list(meas_data.values()))
 
             logger.info(f'{dtstring},{meas_data["pm1"]},{meas_data["pm25"]},{meas_data["pm10"]},'
+                        f'{meas_data["pm1_average"]:.1f},{meas_data["pm25_average"]:.1f},{meas_data["pm10_average"]:.1f},'
+                        f'{meas_data["pm1_min"]},{meas_data["pm25_min"]},{meas_data["pm10_min"]},'
+                        f'{meas_data["pm1_max"]},{meas_data["pm25_max"]},{meas_data["pm10_max"]},'
+                        f'{meas_data["pm1_median"]},{meas_data["pm25_median"]},{meas_data["pm10_median"]},'
+                        f'{meas_data["pm1_tmean"]:.1f},{meas_data["pm25_tmean"]:.1f},{meas_data["pm10_tmean"]:.1f},'
+                        f'{meas_data["temp"]},{meas_data["humi"]},{meas_data["long"]},{meas_data["lati"]},'
+                        f'{pm_status},{gps_status},{fan_status},{device_status},{checksum}')
+
+            print(f'Logged OK - {dtstring},{meas_data["pm1"]},{meas_data["pm25"]},{meas_data["pm10"]},'
                         f'{meas_data["pm1_average"]:.1f},{meas_data["pm25_average"]:.1f},{meas_data["pm10_average"]:.1f},'
                         f'{meas_data["pm1_min"]},{meas_data["pm25_min"]},{meas_data["pm10_min"]},'
                         f'{meas_data["pm1_max"]},{meas_data["pm25_max"]},{meas_data["pm10_max"]},'
@@ -369,7 +393,7 @@ if __name__ == "__main__":
             #             dtstring,
             #             meas_data["pm1"], meas_data["pm25"], meas_data["pm10"], meas_data["temp"], meas_data["humi"],
             #             meas_data["long"], meas_data["lati"])
-            print("Logged OK- %s" % meas_data, f'{pm_status=},{gps_status=},{fan_status=},{device_status=},{checksum=}')
+            # print("Logged OK- %s" % meas_data, f'{pm_status=},{gps_status=},{fan_status=},{device_status=},{checksum=}')
 
             # _dt = datetime.fromtimestamp(int(meas_data["timestamp"])).strftime('%Y-%m-%d %H:%M:%S')
 
