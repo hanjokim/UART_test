@@ -262,8 +262,6 @@ def readThread(pm_ser, gps_ser):
     global exitThread
     global clock_set
     global pm_err_count
-    # global pm_status
-    # global gps_status
     global sample_no
     global trim_percent
 
@@ -275,14 +273,12 @@ def readThread(pm_ser, gps_ser):
         if len(temp) == pm_data_size:
             pm_data = parsing_pm_data(temp)
             if pm_data != -1:
-                # pm_status = "OK"
                 meas_data["pm1"] = pm_data[2]
                 meas_data["pm25"] = pm_data[3]
                 meas_data["pm10"] = pm_data[4]
                 meas_data["temp"] = (pm_data[12] / 10.) if is_PMS7003T else None
                 meas_data["humi"] = (pm_data[13] / 10.) if is_PMS7003T else None
             else:
-                # pm_status = "NG"
                 meas_data["pm1"] = 0
                 meas_data["pm25"] = 0
                 meas_data["pm10"] = 0
@@ -395,15 +391,6 @@ if __name__ == "__main__":
                             f'{meas_data["temp"]},{meas_data["humi"]},{meas_data["long"]},{meas_data["lati"]},'\
                             f'{pm_status},{gps_status},{fan_status},{device_status},{checksum}\n'
 
-            # logger.info(f'{dtstring},{meas_data["pm1"]},{meas_data["pm25"]},{meas_data["pm10"]},'
-            #             f'{meas_data["pm1_average"]:.1f},{meas_data["pm25_average"]:.1f},{meas_data["pm10_average"]:.1f},'
-            #             f'{meas_data["pm1_min"]},{meas_data["pm25_min"]},{meas_data["pm10_min"]},'
-            #             f'{meas_data["pm1_max"]},{meas_data["pm25_max"]},{meas_data["pm10_max"]},'
-            #             f'{meas_data["pm1_median"]},{meas_data["pm25_median"]},{meas_data["pm10_median"]},'
-            #             f'{meas_data["pm1_tmean"]:.1f},{meas_data["pm25_tmean"]:.1f},{meas_data["pm10_tmean"]:.1f},'
-            #             f'{meas_data["temp"]},{meas_data["humi"]},{meas_data["long"]},{meas_data["lati"]},'
-            #             f'{pm_status},{gps_status},{fan_status},{device_status},{checksum}')
-
             print(f'Logged OK - {dtstring},{meas_data["pm1"]},{meas_data["pm25"]},{meas_data["pm10"]},'
                         f'{meas_data["pm1_average"]:.1f},{meas_data["pm25_average"]:.1f},{meas_data["pm10_average"]:.1f},'
                         f'{meas_data["pm1_min"]},{meas_data["pm25_min"]},{meas_data["pm10_min"]},'
@@ -412,13 +399,6 @@ if __name__ == "__main__":
                         f'{meas_data["pm1_tmean"]:.1f},{meas_data["pm25_tmean"]:.1f},{meas_data["pm10_tmean"]:.1f},'
                         f'{meas_data["temp"]},{meas_data["humi"]},{meas_data["long"]},{meas_data["lati"]},'
                         f'{pm_status},{gps_status},{fan_status},{device_status},{checksum}')
-            # logger.info("%s,%.1f,%.1f,%.1f,%.1f,%.1f,%.5f,%.5f",
-            #             dtstring,
-            #             meas_data["pm1"], meas_data["pm25"], meas_data["pm10"], meas_data["temp"], meas_data["humi"],
-            #             meas_data["long"], meas_data["lati"])
-            # print("Logged OK- %s" % meas_data, f'{pm_status=},{gps_status=},{fan_status=},{device_status=},{checksum=}')
-
-            # _dt = datetime.fromtimestamp(int(meas_data["timestamp"])).strftime('%Y-%m-%d %H:%M:%S')
 
             disp_OLED(meas_data)
 
