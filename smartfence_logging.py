@@ -365,7 +365,6 @@ if __name__ == "__main__":
                 sample_pm1 = []
                 sample_pm25 = []
                 sample_pm10 = []
-                # stat_cycle = 0
 
             checksum = calculate_checksum(list(meas_data.values()))
 
