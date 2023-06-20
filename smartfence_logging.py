@@ -91,7 +91,7 @@ logger.setLevel(logging.INFO)
 if log_mode == 'midnight':
     log_interval = 1
 
-timedfilehandler = logging.handlers.TimedRotatingFileHandler(filename='log/smartfencelog', when=log_mode, interval=log_interval, encoding='utf-8', utc=False)
+timedfilehandler = logging.handlers.TimedRotatingFileHandler(filename='log/smartfencelog_test', when=log_mode, interval=log_interval, encoding='utf-8', utc=False)
 # timedfilehandler.setFormatter(formatter)
 # timedfilehandler.suffix = "%Y%m%d"
 timedfilehandler.suffix = "%Y%m%d_%H%M%S"
@@ -369,8 +369,7 @@ if __name__ == "__main__":
 
             checksum = calculate_checksum(list(meas_data.values()))
 
-            if stat_cycle == sample_no:
-                log_data += f'{dtstring},{meas_data["pm1"]},{meas_data["pm25"]},{meas_data["pm10"]},' \
+            log_string = f'{dtstring},{meas_data["pm1"]},{meas_data["pm25"]},{meas_data["pm10"]},' \
                             f'{meas_data["pm1_average"]:.1f},{meas_data["pm25_average"]:.1f},{meas_data["pm10_average"]:.1f},' \
                             f'{meas_data["pm1_min"]},{meas_data["pm25_min"]},{meas_data["pm10_min"]},' \
                             f'{meas_data["pm1_max"]},{meas_data["pm25_max"]},{meas_data["pm10_max"]},' \
@@ -378,27 +377,16 @@ if __name__ == "__main__":
                             f'{meas_data["pm1_tmean"]:.1f},{meas_data["pm25_tmean"]:.1f},{meas_data["pm10_tmean"]:.1f},' \
                             f'{meas_data["temp"]},{meas_data["humi"]},{meas_data["long"]},{meas_data["lati"]},' \
                             f'{pm_status},{gps_status},{fan_status},{device_status},{checksum}'
+
+            if stat_cycle == sample_no:
+                log_data += log_string
                 logger.info(log_data)
                 log_data = ""
                 stat_cycle = 0
             else:
-                log_data += f'{dtstring},{meas_data["pm1"]},{meas_data["pm25"]},{meas_data["pm10"]},'\
-                            f'{meas_data["pm1_average"]:.1f},{meas_data["pm25_average"]:.1f},{meas_data["pm10_average"]:.1f},'\
-                            f'{meas_data["pm1_min"]},{meas_data["pm25_min"]},{meas_data["pm10_min"]},'\
-                            f'{meas_data["pm1_max"]},{meas_data["pm25_max"]},{meas_data["pm10_max"]},'\
-                            f'{meas_data["pm1_median"]},{meas_data["pm25_median"]},{meas_data["pm10_median"]},'\
-                            f'{meas_data["pm1_tmean"]:.1f},{meas_data["pm25_tmean"]:.1f},{meas_data["pm10_tmean"]:.1f},'\
-                            f'{meas_data["temp"]},{meas_data["humi"]},{meas_data["long"]},{meas_data["lati"]},'\
-                            f'{pm_status},{gps_status},{fan_status},{device_status},{checksum}\n'
+                log_data += log_string + '\n'
 
-            print(f'Logged OK - {dtstring},{meas_data["pm1"]},{meas_data["pm25"]},{meas_data["pm10"]},'
-                        f'{meas_data["pm1_average"]:.1f},{meas_data["pm25_average"]:.1f},{meas_data["pm10_average"]:.1f},'
-                        f'{meas_data["pm1_min"]},{meas_data["pm25_min"]},{meas_data["pm10_min"]},'
-                        f'{meas_data["pm1_max"]},{meas_data["pm25_max"]},{meas_data["pm10_max"]},'
-                        f'{meas_data["pm1_median"]},{meas_data["pm25_median"]},{meas_data["pm10_median"]},'
-                        f'{meas_data["pm1_tmean"]:.1f},{meas_data["pm25_tmean"]:.1f},{meas_data["pm10_tmean"]:.1f},'
-                        f'{meas_data["temp"]},{meas_data["humi"]},{meas_data["long"]},{meas_data["lati"]},'
-                        f'{pm_status},{gps_status},{fan_status},{device_status},{checksum}')
+            print(f"Logged OK - {log_string}")
 
             disp_OLED(meas_data)
 
